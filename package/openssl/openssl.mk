@@ -122,7 +122,7 @@ define HOST_OPENSSL_INSTALL_CMDS
 endef
 
 define OPENSSL_INSTALL_TARGET_CMDS
-	$(MAKE1) -C $(@D) INSTALL_PREFIX=$(TARGET_DIR) install
+	$(MAKE1) $(OPENSSL_FIPS_MAKE_OPT) -C $(@D) INSTALL_PREFIX=$(TARGET_DIR) install
 	rm -rf $(TARGET_DIR)/usr/lib/ssl
 endef
 
