@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/sh 
+# proftpd - ftp daemon init-script
+# supports inetd and pre-checking configuration
 
 DAEMON=/usr/sbin/proftpd
 trap "" HUP
