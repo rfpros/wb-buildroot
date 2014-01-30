@@ -160,7 +160,7 @@ define LINUX_APPLY_PATCHES
 		if echo $$p | grep -q -E "^ftp://|^http://|^https://" ; then \
 			$(APPLY_PATCHES) $(@D) $(DL_DIR) `basename $$p` ; \
 		elif test -d $$p ; then \
-			$(APPLY_PATCHES) $(@D) $$p linux-\*.patch ; \
+			$(APPLY_PATCHES) $(@D) $$p linux-$(LINUX_VERSION)\*.patch ; \
 		else \
 			$(APPLY_PATCHES) $(@D) `dirname $$p` `basename $$p` ; \
 		fi \
