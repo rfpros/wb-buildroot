@@ -144,6 +144,8 @@ wifi_start() {
     grep -o 'slot_b=.' /proc/cmdline \
     && msg "warning: \"slot_b\" setting in bootargs"
 
+    modprobe cfg80211
+
     ## set atheros driver core options
     ath6kl_params="recovery_enable=1 heart_beat_poll=200"
 
