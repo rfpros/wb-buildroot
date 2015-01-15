@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pre manager bringup
+
+case $1 in
+
+  stop)
+    ;;
+
+  start)
+    modprobe ath6kl_sdio
+    wpa_supplicant -iwlan0 -Dnl80211 -u -c/etc/wpa_supplicant.conf &
+    ;;
+
+
+
+esac
+exit 0
+
