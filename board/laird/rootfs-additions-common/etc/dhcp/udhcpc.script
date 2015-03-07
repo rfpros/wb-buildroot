@@ -1,21 +1,39 @@
 #!/usr/bin/env ash
+
+# Copyright (c) 2015, Laird
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+# INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+# LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+# OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+# PERFORMANCE OF THIS SOFTWARE.
+#
+# contact: ews-support@lairdtech.com
+
 # /etc/dhcp/udhcpc.script
 # An event action script for udhcpc.
-# jon.hefling@lairdtech.com,20120521,20130113,20131217
+# 20120521..20141028
 
 eval $udhcpc_Settings 2>/dev/null
 test -f /etc/dhcp/udhcpc.conf && . /etc/dhcp/udhcpc.conf
 test -f /etc/dhcp/udhcpc.$interface.conf && . /etc/dhcp/udhcpc.$interface.conf
 # For the global variables below, values from the exported udhcpc_settings will
 # overwrite those from the udhcpc[.<iface>].conf files.  Otherwise, the default
-# values will be used from the expanded right-most string.
+# values (below) will be used from the expanded right-most string.
 
 # Debug support.
-LOG_FILE=${log_file:-${LOG_FILE:-'/dev/null'}}
+LOG_FILE=${log:-${LOG_FILE:-'/dev/null'}}
 VERBOSE=${vb:-${VERBOSE:-''}}
 test -n "$VERBOSE" \
   && vecho=echo \
   || vecho=:
+
+# Support multipath policy routing.
+MULTIPATH_POLICY_ROUTING=${mpr:-${MULTIPATH_POLICY_ROUTING:-''}}
 
 # Extensions.
 VENDORINFO_HOOK=${vendorinfo_hook:-${VENDORINFO_HOOK:-''}}
@@ -45,6 +63,20 @@ write_lease_info() {
   # default DHCPACK and trim leading zero
   opt53=${opt53:-5} && opt53=${opt53##*0}
 
+  # for wireless, store ap_indentifier MAC SSID
+  if [ -d /sys/class/net/$interface/wireless ]
+  then
+    apid=$( iw dev $interface link \
+          |sed -n 's/.* \(..:..:..:..:..:..\) .*/\1/p;s/.*SSID:\( .*\)/\1/p' \
+          |tr -d '\n' )
+  fi
+
+  # add options
+  extra_options=''
+  # formated with: '\n  <content>;'
+  extra_options=$extra_options"${apid:+
+  option ap-identifier $apid;}"
+
   # make new copy of leases file, while retaining other non-lease info,
   # get just the previous lease-entry and then append current lease-entry
   sed '/^leas/,$!p;/^leas/h;/^leas/!H;$!b;x;/^leas/,$p' -n $1 >$1~
@@ -52,7 +84,7 @@ write_lease_info() {
   cat >>$1~<<-	\
 	lease-entry
 	lease {
-	  interface "$interface";
+	  interface "$interface";${extra_options}
 	  option fixed-address $ip;
 	  option broadcast-address $broadcast;
 	  option subnet-mask $subnet;
@@ -96,6 +128,7 @@ sed "/^${esa:0:17}/d;/^#/h;/^ *$/{s,^,${esa}\n,}" -i $LEASES_FILE
 
 # rt_tables support...
 if ip rule >/dev/null 2>&1 \
+&& [ "$MULTIPATH_POLICY_ROUTING" == "yes" ] \
 && grep -qs "t.$interface" /etc/iproute2/rt_tables
 then
   tn=t.$interface
@@ -108,7 +141,7 @@ then
   if [ $sz -le 102400 ]
   then
     read -rs us is </proc/uptime
-    printf "% 13.2f __$0 $@\n" $us >>$LOG_FILE
+    printf "% 13.2f __$0 $@ ${ip:+ IP:$ip}\n" $us >>$LOG_FILE
   else
     LOG_FILE=/dev/null
   fi
@@ -120,13 +153,13 @@ case $action in
   deconfig)
     # Remove relative entries from the routing table.
     # The iface is still up and accessible.
-    fn ip addr flush dev $interface
+    fn ip -4 addr flush dev $interface
 
     # Remove any applicable policy rules.
     while ip rule del not table $tn 2>/dev/null; do :;done
     ;;
 
-  renew|bound)
+  renew|bound|refresh)
     # Must have the ip-address.
     [ -n "$ip" ] || exit_err "address unset"
 
@@ -183,10 +216,10 @@ case $action in
     # Re-write entries in routing table, only for this interface, if set.
     if [ -n "$router" ]
     then
+      { read -rs ifindex < /sys/class/net/$interface/ifindex; } 2>/dev/null
+
       # preserve other-default-routes excluding this interface
       odr=$( ip route |sed -n "/via /{/$interface/d;s/^[ \t]*//p}" )
-
-      { read -rs ifindex < /sys/class/net/$interface/ifindex; } 2>/dev/null
 
       # for rt_tables
       if [ -n "$tn" ]
@@ -195,6 +228,7 @@ case $action in
         weight=weight\ ${weight:-${ifindex:-1}}
         nexthop=nexthop
       else
+        weight=
         nexthop=
         odr=
       fi
@@ -239,8 +273,13 @@ case $action in
       fi
     fi
 
-    # Update the leases file.
-    write_lease_info $LEASES_FILE
+    if [ "$action" != refresh ]
+    then
+      # Update the leases file.
+      write_lease_info $LEASES_FILE
+    else
+      vecho "^-lease re-applied: ${apid:-?}"
+    fi
     ;;
 
   leasefail)

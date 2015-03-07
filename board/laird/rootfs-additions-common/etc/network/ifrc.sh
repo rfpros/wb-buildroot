@@ -22,12 +22,13 @@ usage() {
 	  -v   be more verbose...
 	  -n   no logging to files
 	  -m   monitor ifrc events
+	  -#   inet family protocol
 	  -x   run w/o netlink daemon
 	     ( Note:  ifrc may be disabled with:  /etc/default/ifrc.disable )
 	  
 	Interface:
 	  name must be kernel-resident, or will try to start
-	  can be an alias (such as 'wl' for wireless, see /e/n/i file)
+	  can be an alias defined in /e/n/i file
 	
 	Action:
 	  stop|start|restart   - act on phy-init/driver (up or down the hw-phy)
@@ -65,7 +66,7 @@ usage() {
 }
 
 # internals
-ifrc_Version=20140612
+ifrc_Version=20140909
 ifrc_Disable=/etc/default/ifrc.disable
 ifrc_Script=/etc/network/ifrc.sh
 ifrc_Lfp=/tmp/ifrc
@@ -150,6 +151,9 @@ parse_flag() {
     -m*) ## monitor nl/ifrc events for iface
       test -z "${mm:=${1:2}}" && { mm=`tty` || mm=/dev/console; }; true
       ;;
+    -[046]) ## intend link/inet4/inet6 protocol family
+      alias ip=ip\ ${ipf:=$1}
+      ;;
     -x) ## do not run netlink daemon
       ifnl_disable=.
       ;;
@@ -188,6 +192,14 @@ ifnl_s=${ifnl_s//dormant/dt}
 
 [ "$vm" == "....." ] && set -x
 
+# set family
+case $ipf in
+  '') inet='inet[ 46]*' ;;
+  -4) inet='inet[^6]*' ;;
+  -6) inet='inet[6]' ;;
+  -0) inet='link' ;;
+esac
+
 pause() { 
   # n[.nnn] sec -- a zero value means indefinite
   test -p ${ifrc_Lfp}/- || mkfifo ${ifrc_Lfp}/- 2>/dev/null
@@ -217,41 +229,43 @@ sleuth_wl() {
 }
 
 summarize_interface_status() {
-  if ! grep -qs 'u[pn]' /sys/class/net/$dev/operstate
+  if is=inactive && grep -qs 'u[pn]' /sys/class/net/$dev/operstate
   then
-    is=inactive
-  else
-    is=active
-    { read -r x </sys/class/net/$dev/carrier; } 2>/dev/null
-    if ! let x+0
+    if is=active && read -r x </sys/class/net/$dev/carrier && ! let x+0
     then
       is="$is, no_carrier/cable/link"
     else
       [ ! -d /sys/class/net/$dev/phy80211 ] \
       && is="$is, linked" \
-      || { iw dev $dev link |grep -q Connected && is="$is, associated"; } \
-    fi
+      || { iw dev $dev link |grep -q Connected && is="$is, associated"; }
+    fi 2>/dev/null
   fi
-  ps ax |grep -q "ifplug[d].*${dev}" && is="...managed, $is" || is="...$is" 
+  ps ax |grep -q "ifplug[d].*${dev}" && is="- managed, $is" || is="- $is"
 }
 
 show_interface_config_and_status() {
-  # find available iface's not configured
-  # these will exist, and be in down state
-  ida=$( grep -s down /sys/class/net/*/operstate \
-        |sed 's/.*net\/\(.*[^/]\)\/.*/ \1/' \
-        |tr -d '\n' )
-
+  # report available iface's not configured
+  for i in /sys/class/net/*
+  do
+    i=${i##*/}
+    if { read -rs mp < /tmp/ifrc/$i; } 2>/dev/null
+    then
+      mp=${mp%% *}
+      test -n "${mp#*:}" \
+        && continue
+    fi
+    ida=$ida\ $i
+  done
   [ -z "$dev" -a -n "$ida" ] \
-  && echo "       Available, but not configured: $ida"
+  && echo -e "\tAvailable, but not configured: $ida"
 
   [ -n "${vm:1:1}" ] \
   && filter=';s/ mtu/\n\t&/;s/\( state [^ ]*\)\(.*\)/\2\1/' \
-  || filter=';s/ qdisc//;s/ pfi[^ ]*//;s/ qlen [0-9]\+//'
+  || filter=';s/ qdisc//;s/ pfi[^ ]*//;s/ master [^ ]\+//;s/ qlen [0-9]\+//'
 
   ip addr show ${dev:+dev $dev} \
     |sed -e 's/^[0-9]\+: //;s/\([a-z].*:\) /\n\1\t/'"$filter"';s/    /\t/' \
-         -e '/inet6/d;/valid_lft/d'
+         -e 's/\(scope [^ ]\+\)[ ][^ ]\+/\1/;/_lft/d'
 
   : ${dev:=$( sleuth_wl )}
   # include association info for wireless dev
@@ -314,9 +328,9 @@ make_dhcp_renew_request() {
     { read -r txp_a </sys/class/net/$dev/statistics/tx_packets; } 2>/dev/null
 
     msg2 "    tx_packets: $txp_b -> $txp_a"
-    let txp_b=$txp_a-$txp_b && return 0
+    { let txp_b=$txp_a-$txp_b && signal_dhcp_client CHECK; } && return 0
   done
-  msg1 "    failed $x attempts"
+  msg1 "    renew failure [$x]"
   return 1
 }
 
@@ -355,10 +369,14 @@ case $1 in
     then
       echo
       /etc/network/bridge.sh 2>/dev/null && echo
-      echo Routing:
-      ip route show
-      echo -e "\nDNS:\r\tresolv.conf"
-      sed '/^#/d;/^$/d' /etc/resolv.conf 2>/dev/null
+      # inet protocol family
+      if [ "$ipf" != "-0" ]
+      then
+        echo Routing:
+        ip route show
+        echo -e "\nDNS:\r\tresolv.conf"
+        sed '/^#/d;/^$/d' /etc/resolv.conf 2>/dev/null
+      fi
     fi
     exit 0
     ;;
@@ -387,7 +405,7 @@ case $1 in
     exit 0
     ;;
 
-  flags|address|status|down|dn|up) ## require iface
+  flags|addr*|stat*|down|dn|up) ## require iface
     usage error: "...must specify an interface" "ifrc <iface> $1" 
     ;;
 
@@ -429,7 +447,9 @@ read_ifrc_info() {
     if [ -n "$devalias" ]\
     && [ -n "$dev" ]
     then
-      return 0
+      # re-eval appended settings
+      eval ${ifrc_Settings##*;}
+      return $?
     fi
   fi
   return 1
@@ -440,10 +460,8 @@ if ! read_ifrc_info $dev \
 then
   # Generally, operations are on a specific interface.
   # It is possible that the $dev may initially be unknown.
-  # So, for /e/n/i file lookups, we assume the use of $devalias.
-  #
-  # Find iface stanza using '$dev' as a dev*alias or as dev*iface name.
-  # Then extract any general settings for it.
+  # A stanza uses '$dev' as a dev*alias or as dev*iface name.
+  # For /e/n/i stanza lookups, we assume the use of $devalias.
   msg3 "  checking /e/n/i file..."
   D='[a-z][a-z][a-z0-9]*'
   devalias=$( sed -n "/$dev/s/^[ \t]*alias \($D\)[ is]* \($D\)/\1 \2/p" $eni )
@@ -465,10 +483,14 @@ then
     ifacemsg="$dev"
     devalias=$dev
   fi
+
   # dev*alias is used to further process settings for dev*iface in /e/n/i
   msg3 "  iface stanza: ${ifacemsg:-?}"
   test -n "$devalias" \
-    || exit 1
+    || { msg "  unknown iface/alias: ${ifacemsg:-?}"; exit 1; }
+
+  # check if multipath polcy routing is enabled
+  grep -q "^allow-multipath" $eni && mpr=yes || mpr=
 
   # re-attempt lookup
   read_ifrc_info $dev
@@ -478,7 +500,7 @@ then
     && fls=${fls//-v/} \
     && flags_eni=$( sed -n "/^iface $devalias/,/^$/\
                       s/^[ \t]\+[^#]ifrc-flags \(.*\)/\1/p" $eni )
-
+  #
   # apply flags from iface stanza in /e/n/i
   for af in $flags_eni; do parse_flag $af || break; done
 fi
@@ -515,7 +537,7 @@ make_() { ( eval $1; x=$?; [ ${1:0:1} == / ] && echo \ \ ${1##*/}: $x ); }
 
 fn() { { msg2 "+ $*"; } 2>/dev/null; eval "$*" 2>&1 || { msg "? $*"; false; }; }
 
-export ifrc_Settings=fls=\"$fls\"\ mm=$mm\ vm=$vm\ qm=$qm
+export ifrc_Settings=fls=\"$fls\"\ mm=$mm\ vm=$vm\ qm=$qm\;\ mpr=$mpr
 
 # external globals - carried per instance and can be used by *-do scripts
 export IFRC_STATUS="${ifnl_s:-  ->  }"
@@ -533,7 +555,7 @@ test -n "$1" \
 if [ "$IFRC_ACTION" == "up" ]
 then
   # get current iface stanza crc from /e/n/i
-  eni_sc=$( sed '/./{H;$!d;};x;/[#]*iface '$devalias' inet/!d;n' $eni |cksum )
+  eni_sc=$( sed "/./{H;$!d;};x;/[#]*iface $devalias inet/!d;a\\" $eni |cksum )
 
   if [ -n "$ifnl_s" ]
   then
@@ -549,7 +571,7 @@ then
       IFRC_METHOD=${@%% cdt{*}
       IFRC_SCRIPT=${@##* cdt{}
     else
-      # a re-'up' when iface stanza not changed in eni
+      # re-'up' when iface stanza not changed in eni
       if [ -n "$mp_cdt" -a -z "${eni_sc/$eni_sk}" ]
       then
         # use cfg in lieu of change
@@ -559,22 +581,25 @@ then
       else
         # use eni settings
         methvia="(via /e/n/i)"
-        IFRC_METHOD=$( sed -n "/^iface $devalias inet /\
-                              {s/.* inet \([a-z]*\)/\1/p;q;}" $eni )
+        # use first iface inet and its trailing options
+        IFRC_METHOD=$( sed -n "/^iface $devalias $inet/\
+                              {s/.* $inet \([a-z]*\)/\1/p;q;}" $eni )
         set -- $IFRC_METHOD \
-               $( sed -n "/^iface $devalias inet $IFRC_METHOD/,/^if/!d;/^$/q;\
-                              s/^[ \t]\+\([^#][a-z]*\)[ ]\(.*\)/\1=\2/p" $eni )
+             $( sed "/^iface $devalias $inet $IFRC_METHOD/,/^if/!d;/^$/q;\
+                       /ifrc-/d;/alias/d;\
+                            s/^[ \t]\+\([^#][a-z]*\)[ ]\(.*\)/\1=\2/p" -n $eni )
         IFRC_METHOD=$@
       fi
     fi
 
-    # check /e/n/i for ifrc-pre/post-d/cfg-do tasks
-    # only do this if not already set and not via nld
+    # check /e/n/i stanza for ifrc-pre/post-d/cfg-do tasks
+    # and only if not already set and not via nld
+    # use tasks following matching iface inet
     if [ -z "$IFRC_SCRIPT" -a -z "$ifnl_s" ]
     then
       msg3 "parsing /e/n/i for pre/post conf directives, intended for $dev..."
 
-      set -- "$( sed -n "/^iface $devalias/,/^if/!d;/^$/q;\
+      set -- "$( sed -n "/^iface $devalias $inet /,/^if/!d;/^$/q;\
          s/^[ \t]\+\([^#]p[or][se][t]*\)-\([d]*cfg\)-do \(.*\)/\1_\2_do='\3'/p"\
                        $eni 2>/dev/null )"
       IFRC_SCRIPT=$@
@@ -588,7 +613,7 @@ then
     methvia="(assumed)"
     IFRC_METHOD="dhcp"
   fi
-  IFRC_SCRIPT=${IFRC_SCRIPT/$IFRC_METHOD}
+  IFRC_SCRIPT=${IFRC_SCRIPT#$IFRC_METHOD}
 elif \
    [ "$IFRC_ACTION" == "dn" ] \
 || [ "$IFRC_ACTION" == "down" ]
@@ -605,7 +630,7 @@ eval $IFRC_SCRIPT \
 # The action may be overridden depending on the following event rules.
 if [ -n "$ifnl_s" ]
 then
-  ## run via nl daemon, consume extra args
+  ## run via nl daemon, consume args
   shift $#
 
   ## nl event rules for status '  ->dn'
@@ -656,7 +681,19 @@ then
     then
       if [ ! -d ${ifrc_Lfp}/$dev.dhcp ]
       then
+        if $phy80211 \
+        && [ -x /etc/dhcp/autoip.sh ]
+        then
+          # this is likely a 'reconnect' or 'roam' related event
+          # if for AP with same SSID, then try dhcp-esa: refresh
+          apid=$( iw dev $dev link \
+            |sed -n 's/.* \(..:..:..:..:..:..\) .*/\1/p;s/.*SSID:\( .*\)/\1/p' \
+            |tr -d '\n' )
+          test -n "$apid" \
+            && /etc/dhcp/autoip.sh $dev $apid
+        fi
         : signal_dhcp_client RENEW
+        # renewal is handled via re-up config...
       else
         : msg1 "dhcp client lock exists, no act"
         : IFRC_ACTION=xx
@@ -668,16 +705,17 @@ then
 
   msg @. ifrc_s/d/a/m: "$IFRC_STATUS" $IFRC_DEVICE ${IFRC_ACTION:---} \
                        ${IFRC_METHOD%% *} #cdt"${IFRC_SCRIPT:-{\}}"
-else
-  # rt_tables support...
-  if ip rule >/dev/null 2>&1 \
-  && [ -f /etc/iproute2/rt_tables ] \
-  && { read i < /sys/class/net/$dev/ifindex; } 2>/dev/null
-  then
-    let i+=100; tn=t.$dev
-    grep -q "$tn" /etc/iproute2/rt_tables \
-      || printf "$i\t$tn\n" >>/etc/iproute2/rt_tables
-  fi
+fi
+
+# rt_tables support...
+if [ "$mpr" == "yes" ] \
+&& { ip rule >/dev/null 2>&1; } \
+&& [ -f /etc/iproute2/rt_tables ] \
+&& { read i < /sys/class/net/$dev/ifindex; } 2>/dev/null
+then
+  tn=t.$dev
+  grep -q "$tn" /etc/iproute2/rt_tables \
+    || { let i+=100; printf "$i\t$tn\n" >>/etc/iproute2/rt_tables; }
 fi
 
 #
@@ -685,7 +723,7 @@ fi
 # This script uses down/up with respect to interface (de)configuration only!
 #
 case $IFRC_ACTION in
-  address) ## check if iface is configured and show its ip-address
+  address|addr) ## check if iface is configured and show its ip-address
     # affirm configured <iface>: ip-address [...status]:0/1
     # returns true if the iface is configured with an ip-address
     is=; ip=$( gipa $dev ); rv=$?
@@ -696,14 +734,14 @@ case $IFRC_ACTION in
 
   status) ## call on phy-init for status, no return
     [ -n "${vm:0:1}" ] && set -x
-    exec $nis $devalias $IFRC_ACTION ${IFRC_METHOD%% *}
+    exec $nis $dev $IFRC_ACTION ${IFRC_METHOD%% *}
     ;;
 
   show) ## show info/status for an iface
     test -f /sys/class/net/$dev/uevent \
     || { echo \ \ ...not available, not a kernel-resident interface; exit 1; }
     summarize_interface_status
-    echo Configuration for interface: $ifacemsg $is
+    echo Configuration for interface: ${ifacemsg:-$dev} $is
     if grep -qs Generic /sys/class/net/$dev/*/uevent
     then
       echo Warning: using 'Generic PHY' driver
@@ -722,7 +760,8 @@ case $IFRC_ACTION in
         |sed 's/^/  /;s/broad/b/;s/  pr/\t pr/'
       else
         echo -e "\nRouting: "
-        ip route show dev $dev
+        ip route show ${tn:+table t.$dev} dev $dev 2>/dev/null \
+        || { msg "  note - $tn not in rt_tables"; ip route show dev $dev; }
         echo -e "\nARP:     \n  ...\c"
         ip neigh show dev $dev \
           |sed '1s/^./\r&/;s/lladdr/at/'
@@ -734,7 +773,7 @@ case $IFRC_ACTION in
       f2='\(:[^ ]* *[^ ]*:[^ ]* *\)'
       f3='\(\".*\",[0-9]*\)'
       echo -e "\nConnections:\n  ...\c"
-      ss -4ntuwp \
+      ss $ipf -ntuwp \
         |sed -e '1{s/.*//;N;s/\n//};/user/!d' \
              -e 's/^'"$f1"'.*'"$f2"'u[^ ]\+'"$f3"',.*/\r\1   \2   \3/'
     fi
@@ -753,7 +792,7 @@ case $IFRC_ACTION in
     ;;
 
   eni) ## report interface stanza
-    sed '/./{H;$!d;};x;/[#]*iface '$devalias' inet/!d;n' $eni
+    sed '/./{H;$!d;};x;/[#]*iface '"$devalias inet"'/!d;a\\' $eni
     exit 0
     ;;
 
@@ -780,10 +819,10 @@ case $IFRC_ACTION in
   stop|start|restart) ## act on phy-init/driver, does not return
     ifrc_stop_netlink_daemon
     [ -n "${vm:0:1}" ] && set -x
-    exec $nis $devalias $IFRC_ACTION ${IFRC_METHOD%% *}
+    exec $nis $dev $IFRC_ACTION ${IFRC_METHOD%% *}
     ;;
 
-  dn|down) ## assume down action ->deconfigure
+  down|dn) ## assume down action ->deconfigure
     ##
     if [ -n "$pre_dcfg_do" ]
     then
@@ -801,6 +840,7 @@ case $IFRC_ACTION in
     fn ip addr flush dev $dev
     # also remove any applicable policy rules for the iface
     while ip rule del not table $tn 2>/dev/null; do :;done
+    fn ip route flush cache
     ##
     if [ -n "$post_dcfg_do" ]
     then
@@ -821,7 +861,7 @@ case $IFRC_ACTION in
         unset IFRC_SCRIPT IFRC_STATUS
         msg "interface is not kernel-resident, trying to start ..."
         [ -n "${vm:0:1}" ] && set -x
-        exec $nis $devalias start ${IFRC_METHOD%% *}
+        exec $nis $dev start ${IFRC_METHOD%% *}
       else
         msg "interface is not kernel-resident, try:  ifrc $dev start"
         exit 1
@@ -829,6 +869,7 @@ case $IFRC_ACTION in
     fi
     rmdir ${ifrc_Lfp}/$dev.nis 2>/dev/null
 
+    # affirm if this is a re-up . . .
     test "${methvia/*cfg*/cfg}" == "cfg" && re=re- || re=
     msg1 "${re}configuring $dev using ${IFRC_METHOD%% *} method ${methvia:-(?)}"
     mkdir ${ifrc_Lfp}/$dev.cfg 2>/dev/null \
@@ -867,7 +908,7 @@ case $IFRC_ACTION in
     ;;
 
   \.\.) ## refresh cached configuration
-    eni_sc=$( sed '/./{H;$!d;};x;/[#]*iface '$devalias' inet/!d;n' $eni |cksum )
+    eni_sc=$( sed "/./{H;$!d;};x;/[#]*iface $devalias inet/!d;a\\" $eni |cksum )
     if [ -d ${ifrc_Lfp}/$dev.cfg ]
     then
       msg1 \ \ ...$dev.cfg exists, no refresh
@@ -951,12 +992,15 @@ show_filtered_method_params() {
   then
     if [ -n "$vm" ]
     then
-      if [ -n "$ip$nm$gw$bc$ns" ]
+      if [ -n "$ip$nm$nw$wc$bc$gw$ns" ]
       then
+        echo \ \ params:
         echo \ \ ip: $ip
         echo \ \ nm: $nm
-        echo \ \ gw: $gw
+        echo \ \ nw: $nw
+        echo \ \ wc: $wc
         echo \ \ bc: $bc
+        echo \ \ gw: $gw
         echo \ \ ns: $ns
       fi
       [ -n "$rip" ] && msg request-ip-address: $rip
@@ -977,6 +1021,35 @@ show_filtered_method_params() {
   fi
 }
 
+mp_calc_nw_wc_bc() {
+  if [ "${ip/[0-9]*.[0-9]*.[0-9]*.[0-9]*/dqa}" == "dqa" ] \
+  && [ "${nm/[0-9]*.[0-9]*.[0-9]*.[0-9]*/dqa}" == "dqa" ]
+  then
+    local n x x1 x2 x3 x4 o1 o2 o3 o4 m1 m2 m3 m4
+    n=0; for x in ${1//./ }; do let n++; eval o$n=$x; done
+    n=0; for x in ${2//./ }; do let n++; eval m$n=$x; done
+    let x1="$o1 & $m1"
+    let x2="$o2 & $m2"
+    let x3="$o3 & $m3"
+    let x4="$o4 & $m4"
+  : ${nw:=$x1.$x2.$x3.$x4}
+    let x1="255 -($x1 | $m1)"
+    let x2="255 -($x2 | $m2)"
+    let x3="255 -($x3 | $m3)"
+    let x4="255 -($x4 | $m4)"
+  : ${wc:=$x1.$x2.$x3.$x4}
+    let x1="$x1 +($o1 & $m1)"
+    let x2="$x2 +($o2 & $m2)"
+    let x3="$x3 +($o3 & $m3)"
+    let x4="$x4 +($o4 & $m4)"
+  : ${bc:=$x1.$x2.$x3.$x4}
+    unset n x x1 x2 x3 x4 o1 o2 o3 o4 m1 m2 m3 m4
+  else
+    msg "Error: invalid address (ip) and/or netmask (nm) specified."
+    return 1
+  fi
+} 2>/dev/null
+
 cidr_to_ip_nm() {
   if ip=${1%/*} && [ ${1%/[0-9]*} != ${1} ]
   then
@@ -984,7 +1057,7 @@ cidr_to_ip_nm() {
     local mx maskdgt=254\ 252\ 248\ 240\ 224\ 192\ 128
     let px=${1#*/}/8 px*=4 mx=7-${1#*/}%8 mx*=4
     set -- ${maskpat:0:$px}${maskdgt:$mx:3}
-    nm=${1:-0}.${2:-0}.${3:-0}.${4:-0}
+  : ${nm:=${1:-0}.${2:-0}.${3:-0}.${4:-0}}
     unset px maskpat mx maskdgt
   fi
 }
@@ -1043,6 +1116,7 @@ ifrc_validate_static_method_params() {
     esac
     mp_cdt=${mp_cdt:+$mp_cdt }$x
   done
+  mp_calc_nw_wc_bc ${ip:=0.0.0.0} ${nm:=255.255.255.255} || :
   show_filtered_method_params
 }
 
@@ -1161,8 +1235,8 @@ run_udhcpc() {
   pf='-p/var/run/dhclient.$dev.pid'
 
   # The run-script handles client states and writes to a leases file.
-  # options: vb, log_file, leases_file, resolv_conf
-  export udhcpc_Settings="vb=$vb log_file=$ifrc_Log metric=$metric"
+  # Some parameters need to be shared.
+  export udhcpc_Settings="vb=$vb log=$ifrc_Log mpr=$mpr metric=$metric weight=$weight"
 
   # Client normally continues running in background, and upon obtaining a lease.
   # May be signalled or spawned again depending on events/conditions. Flags are: 
@@ -1252,8 +1326,7 @@ case ${IFRC_METHOD%% *} in
     ifrc_validate_dhcp_method_params
 
     ## try dhcp renewal first, (re)start client if necessary
-    signal_dhcp_client CHECK \
-      && make_dhcp_renew_request \
+    make_dhcp_renew_request \
       && rc_exit 0
 
     check_link
@@ -1306,45 +1379,39 @@ case ${IFRC_METHOD%% *} in
 
   static) ## method + optional params
     ifrc_validate_static_method_params
-    ## configure interface <ip [+nm] [+gw] [+ns]..>
-    #
-    if [ -z "$ip" ]
-    then
-      msg "configuration in-complete, need at least an address: ip=x.x.x.x[/b]"
-      ifrc_stop_netlink_daemon
-      rc_exit 1
-    else
-    # ip-addr-modify NIP/NM and BRD
-      xip=$( ip addr show dev $dev |sed -n '/inet/{s/.*t \([^ ]*\).*/\1/p;q}' )
-      if [ -n "$xip" ]
-      then
-        fn ip addr add $ip/32 dev $dev
-        fn ip addr del $xip dev $dev
-      fi
-      fn ip addr add $ip${nm:+/$nm} ${bc:+broadcast $bc} dev $dev
-      test -n "$xip" \
-        && fn ip addr del $ip/32 dev $dev
-    fi
+
+    # ip-addr-modify IP/NM and BC
+    xip=$( ip -4 -o addr show dev $dev primary \
+         |grep -o '[0-9]*\.[0-9]*\.[0-9]*\.[0-9/]*/[0-9]*' )
+
+    test -n "$xip" \
+      && fn ip addr add $ip/32 ${bc:+broadcast $bc} dev $dev \
+      && fn ip addr del $xip dev $dev
+    : && fn ip addr add $ip${nm:+/$nm} ${bc:+broadcast $bc} dev $dev
+    test -n "$xip" \
+      && fn ip addr del $ip/32 dev $dev
 
     # add default route
     if [ -n "$gw" ]
     then
+      { read -r ifindex < /sys/class/net/$dev/ifindex; } 2>/dev/null
+
       # preserve other-default-routes excluding this interface
       odr=$( ip route |sed -n "/via /{/$dev/d;s/^[ \t]*//p}" )
-
-      { read -r ifindex < /sys/class/net/$dev/ifindex; } 2>/dev/null
 
       # for rt_tables
       if [ -n "$tn" ]
       then
-        # determine a weight for the interface
+        # determine a weight for this interface
         weight=weight\ ${weight:-${ifindex:-1}}
         nexthop=nexthop
       else
+        weight=
         nexthop=
         odr=
       fi
       default=default
+      metric=${metric:+metric\ $metric}
 
       for ra in $gw
       do
@@ -1360,8 +1427,8 @@ case ${IFRC_METHOD%% *} in
       if [ -n "$tn" ]
       then
         # add network and gateway routes to table
-        fn ip route add $network/$subnet dev $dev src $ip table $tn
-        fn ip route add default via $ra dev $dev table $tn
+        fn ip route add $nw/$nm src $ip dev $dev $metric table $tn
+        fn ip route add default via $ra dev $dev $metric table $tn
         # rewrite policy rules in the lookup table
         while ip rule del not table $tn 2>/dev/null; do :;done
         fn ip rule add from ${ip}/32 lookup $tn  ### outgoing ##
