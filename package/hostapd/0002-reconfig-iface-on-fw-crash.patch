@@ -1,8 +1,8 @@
 diff --git a/hostapd/main.c b/hostapd/main.c
-index 56f0002..86a3da3 100644
+index a9d91b9..ac319a1 100644
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -331,6 +331,36 @@ static int handle_reload_iface(struct hostapd_iface *iface, void *ctx)
+@@ -282,6 +282,36 @@ static int handle_reload_iface(struct hostapd_iface *iface, void *ctx)
  	return 0;
  }
  
@@ -20,7 +20,7 @@ index 56f0002..86a3da3 100644
 +	if (driver && driver->hapd_deinit && drv_priv)
 +		driver->hapd_deinit(drv_priv);
 +
-+	if (iface->conf->bss[0].iface[0] != 0 ||
++	if (iface->conf->bss[0]->iface[0] != 0 ||
 +	    hostapd_drv_none(iface->bss[0])) {
 +		if (hostapd_driver_init(iface) || hostapd_setup_interface(iface)) {
 +			hostapd_interface_deinit_free(iface);
@@ -39,7 +39,7 @@ index 56f0002..86a3da3 100644
  
  /**
   * handle_reload - SIGHUP handler to reload configuration
-@@ -343,6 +373,16 @@ static void handle_reload(int sig, void *signal_ctx)
+@@ -294,6 +324,16 @@ static void handle_reload(int sig, void *signal_ctx)
  	hostapd_for_each_interface(interfaces, handle_reload_iface, NULL);
  }
  
@@ -56,7 +56,7 @@ index 56f0002..86a3da3 100644
  
  static void handle_dump_state(int sig, void *signal_ctx)
  {
-@@ -378,6 +418,7 @@ static int hostapd_global_init(struct hapd_interfaces *interfaces,
+@@ -326,6 +366,7 @@ static int hostapd_global_init(struct hapd_interfaces *interfaces,
  #ifndef CONFIG_NATIVE_WINDOWS
  	eloop_register_signal(SIGHUP, handle_reload, interfaces);
  	eloop_register_signal(SIGUSR1, handle_dump_state, interfaces);
@@ -65,10 +65,10 @@ index 56f0002..86a3da3 100644
  	eloop_register_signal_terminate(handle_term, interfaces);
  
 diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
-index 37b6be9..b570b27 100644
+index d030474..8f5f1c4 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -23,6 +23,7 @@
+@@ -26,6 +26,7 @@
  #include <netpacket/packet.h>
  #include <linux/filter.h>
  #include <linux/errqueue.h>
@@ -76,18 +76,18 @@ index 37b6be9..b570b27 100644
  #include "nl80211_copy.h"
  
  #include "common.h"
-@@ -291,6 +292,7 @@ struct wpa_driver_nl80211_data {
+@@ -352,6 +353,7 @@ struct wpa_driver_nl80211_data {
  	int auth_p2p;
  };
  
 +static unsigned int reg_change_seen = 0;
  
+ static void wpa_driver_nl80211_deinit(struct i802_bss *bss);
  static void wpa_driver_nl80211_scan_timeout(void *eloop_ctx,
- 					    void *timeout_ctx);
-@@ -2262,6 +2264,17 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
+@@ -3196,6 +3198,17 @@ static void do_process_drv_event(struct i802_bss *bss, int cmd,
+ 		nl80211_cqm_event(drv, tb);
  		break;
  	case NL80211_CMD_REG_CHANGE:
- 		wpa_printf(MSG_DEBUG, "nl80211: Regulatory domain change");
 +		/* On start a regulatory domain change event should happen.
 +		 * If another REG_CHANGE event happens, it likely means the
 +		 * firmware restarted. So send a signal to ourselves to
@@ -99,6 +99,6 @@ index 37b6be9..b570b27 100644
 +		} else {
 +			reg_change_seen = 1;
 +		}
- 		wpa_supplicant_event(drv->ctx, EVENT_CHANNEL_LIST_CHANGED,
- 				     NULL);
+ 		nl80211_reg_change_event(drv, tb);
  		break;
+ 	case NL80211_CMD_REG_BEACON_HINT:
