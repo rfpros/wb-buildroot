@@ -13,6 +13,8 @@ LRD_NETWORK_MANAGER_DEPENDENCIES = host-pkgconf udev dbus-glib libnl gnutls \
 LRD_NETWORK_MANAGER_LICENSE = GPLv2+ (app), LGPLv2+ (libnm-util)
 LRD_NETWORK_MANAGER_LICENSE_FILES = COPYING libnm-util/COPYING
 
+LRD_NETWORK_MANAGER_AUTORECONF = YES
+
 LRD_NETWORK_MANAGER_CONF_ENV = \
 	ac_cv_path_LIBGCRYPT_CONFIG=$(STAGING_DIR)/usr/bin/libgcrypt-config \
 	ac_cv_file__etc_fedora_release=no \
