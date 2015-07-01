@@ -1,0 +1,25 @@
+From dc96b538e1fffdcdf4cda6f69784ff7855ae2ea4 Mon Sep 17 00:00:00 2001
+From: Steve deRosier <Steve.Derosier@lairdtech.com>
+Date: Wed, 1 Jul 2015 16:41:36 -0700
+Subject: [PATCH] Update version to Laird21.07
+
+---
+ Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index a613134..c43ff28 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ VERSION = 3
+ PATCHLEVEL = 8
+ SUBLEVEL = 0
+-EXTRAVERSION = -laird21.06
++EXTRAVERSION = -laird21.07
+ NAME = Unicycling Gorilla
+ 
+ # *DOCUMENTATION*
+-- 
+1.7.9.5
+
