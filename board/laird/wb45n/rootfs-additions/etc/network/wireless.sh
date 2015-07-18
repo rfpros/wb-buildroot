@@ -234,12 +234,12 @@ wifi_start() {
       || { msg ..error; return 2; }
       msg .ok
     fi
-    if [ -e "$EVENT_MON" ] \
-    && ! pidof event_mon >/dev/null
-    then
-      $EVENT_MON -ologging -b0x0000003FA3008000 -m &
-      msg "  started: event_mon[$!]"
-    fi
+  fi
+  if [ -e "$EVENT_MON" ] \
+  && ! pidof event_mon >/dev/null
+  then
+    $EVENT_MON -ologging -b0x0000003FA3008000 -m &
+    msg "  started: event_mon[$!]"
   fi
   return 0
 }
@@ -254,13 +254,17 @@ wifi_stop() {
     # so packets don't use it.  Otherwise stale settings can remain.
     ip addr flush dev $WIFI_DEV && msg "  ...de-configured"
 
+    ## terminate event_mon if this is not supp/host restart
+    if [ "${1/*supp*/X}" != "X" -a "${1/*host*/X}" != "X" ]
+    then
+      killall event_mon 2>/dev/null && msg "event_mon stopped"
+    fi
+
     ## terminate the supplicant by looking up its process id
     if [ "$1/*host*/X}" != "X" ] \
     && let pid=$( grep -s ^ $supp_sd/pid )+0
     then
       rm -f $supp_sd/pid
-      # and terminate event_mon too
-      killall event_mon 2>/dev/null && msg "event_mon stopped"
       kill $pid && { let n=27; msg -n "supplicant terminating."; }
       while let n-- && [ -d /proc/$pid ]; do $usleep 50000; msg -n .; done; msg
     fi
@@ -364,7 +368,7 @@ case $1 in
     echo "  -d  debug verbosity (-dd even more)"
     echo
     echo "Usage:"
-    echo "# ${0##*/} [-tdddd] [fips] {stop|start|restart|status} [supp]"
+    echo "# ${0##*/} [-tdddd] [fips] {stop|start|restart|status} [supp|host]"
     ;;
 
   *)
