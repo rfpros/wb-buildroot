@@ -1,0 +1,25 @@
+From 38b69f25416ecd69d8eb76ab8ee703615c6e1085 Mon Sep 17 00:00:00 2001
+From: Dan Kephart <dan.kephart@lairdtech.com>
+Date: Tue, 19 Jul 2016 15:00:18 -0400
+Subject: [PATCH] laird: update version to laird16
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 83cfbad..1249796 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ VERSION = 4
+ PATCHLEVEL = 1
+ SUBLEVEL = 13
+-EXTRAVERSION = -laird15
++EXTRAVERSION = -laird16
+ NAME = Series 4800
+ 
+ # *DOCUMENTATION*
+-- 
+2.4.10
+
