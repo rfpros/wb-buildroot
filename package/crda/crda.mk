@@ -12,6 +12,10 @@ CRDA_DEPENDENCIES = host-pkgconf host-python-m2crypto \
 CRDA_LICENSE = ISC
 CRDA_LICENSE_FILES = LICENSE
 
+ifeq ($(BR2_PACKAGE_CRDA_NO_SIGN_CHECK),y)
+export CRDA_NO_SIGN_CHECK=y
+endif
+
 # * key2pub.py currently is not python3 compliant (though python2/python3
 #   compliance could rather easily be achieved.
 # * key2pub.py uses M2Crypto python module, which is only available for
