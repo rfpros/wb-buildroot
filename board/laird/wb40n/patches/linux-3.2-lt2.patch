@@ -3556,3 +3556,16 @@ diff -urN linux-3.2/drivers/net/phy/icplus.c linux-3.2-lt1/drivers/net/phy/icplu
  	{ }
  };
 
+diff -urN linux-3.2/kernel/timeconst.pl linux-3.2-lt1/kernel/timeconst.pl
+--- linux-3.2/kernel/timeconst.pl	2012-01-04 18:55:44.000000000 -0500
++++ linux-3.2-lt1/kernel/timeconst.pl	2017-07-24 15:19:57.066205689 -0400
+@@ -370,7 +370,7 @@
+ 	}
+ 
+ 	@val = @{$canned_values{$hz}};
+-	if (!defined(@val)) {
++	if (!@val) {
+ 		@val = compute_values($hz);
+ 	}
+ 	output($hz, @val);
+
