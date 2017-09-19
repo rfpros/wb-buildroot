@@ -31,8 +31,6 @@ define MSD_BINARIES_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 755 $(@D)/usr/sbin/smu_cli $(TARGET_DIR)/usr/sbin/smu_cli
 	$(INSTALL) -D -m 755 $(@D)/usr/bin/sdcsupp $(TARGET_DIR)/usr/bin/sdcsupp
 	$(INSTALL) -D -m 755 $(@D)/usr/bin/dhcp_injector $(TARGET_DIR)/usr/bin/dhcp_injector
-	$(INSTALL) -D -m 755 $(@D)/usr/bin/smartSS $(TARGET_DIR)/usr/bin/smartSS
-	$(INSTALL) -D -m 755 $(@D)/usr/bin/smartBASIC $(TARGET_DIR)/usr/bin/smartBASIC
 	mkdir -p $(TARGET_DIR)/usr/lib
 	$(INSTALL) -m 755 $(@D)/usr/lib/libsdc_sdk.so* $(TARGET_DIR)/usr/lib/
 	$(MAKE) --no-print-directory -C $(LINUX_DIR) kernelrelease ARCH=arm CROSS_COMPILE="$(TARGET_CROSS)" > $(@D)/kernel.release
@@ -52,8 +50,6 @@ define MSD_BINARIES_INSTALL_TARGET_CMDS
 	mkdir -p -m 700 $(TARGET_DIR)/usr/sbfs
 	mkdir -p $(TARGET_DIR)/usr/share/smartBASIC/apps
 	mkdir -p $(TARGET_DIR)/usr/share/smartBASIC/apps/lib
-	$(INSTALL) -D -m 755 $(@D)/usr/share/smartBASIC/apps/*.sb $(TARGET_DIR)/usr/share/smartBASIC/apps/
-	$(INSTALL) -D -m 755 $(@D)/usr/share/smartBASIC/apps/lib/*.sblib $(TARGET_DIR)/usr/share/smartBASIC/apps/lib/
 endef
 
 define MSD_BINARIES_INSTALL_STAGING_CMDS
