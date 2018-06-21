@@ -13,9 +13,10 @@
 	#address-cells = <1>;
 
 	images {
+		encryption = "aes128";
 		uboot {
 			description = "U-Boot";
-			data = /incbin/("u-boot-nodtb.bin");
+			data = /incbin/("u-boot-nodtb.bin.enc");
 			type = "firmware";
 			os = "U-Boot";
 			arch = "arm";
@@ -28,7 +29,7 @@
 		};
 		fdt {
 			description = "SOM60 flat device-tree";
-			data = /incbin/("u-boot.dtb");
+			data = /incbin/("u-boot.dtb.enc");
 			type = "flat_dt";
 			compression = "none";
 			fdt-version = <1>;

@@ -76,8 +76,14 @@ cp $BOARD_DIR/configs/u-boot.its $BINARIES_DIR/u-boot.its || exit 1
 # First check for local keys, generate own if not
 # Then update uboot dtb with keys & sign kernel
 # Then build uboot FIT
+
+openssl aes-128-cbc -e -K 01020304050607080901020304050607 -iv 00000000000000000000000000000001 -in $BINARIES_DIR/u-boot.dtb -out $BINARIES_DIR/u-boot.dtb.enc -v
+openssl aes-128-cbc -e -K 01020304050607080901020304050607 -iv 00000000000000000000000000000001 -in $BINARIES_DIR/u-boot-nodtb.bin -out $BINARIES_DIR/u-boot-nodtb.bin.enc -v
+
+
 echo "# entering $BINARIES_DIR for the next command"
-(cd $BINARIES_DIR && $mkimage -f u-boot.its -K u-boot-spl.dtb -k keys -r u-boot.itb) || exit 1
+(cd $BINARIES_DIR && $mkimage -f u-boot.its u-boot.itb) || exit 1
+(cd $BINARIES_DIR && $mkimage -F -K u-boot-spl.dtb -k keys -r -Z 01020304050607080901020304050607 -z 00000000000000000000000000000001 u-boot.itb) || exit 1
 
 # Then update SPL with appended keyed DTB
 cat $BINARIES_DIR/u-boot-spl-nodtb.bin $BINARIES_DIR/u-boot-spl.dtb > $BINARIES_DIR/u-boot-spl.bin
