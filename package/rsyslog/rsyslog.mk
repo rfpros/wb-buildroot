@@ -57,6 +57,13 @@ else
 RSYSLOG_CONF_OPTS += --disable-uuid
 endif
 
+ifeq ($(BR2_PACKAGE_GNUTLS),y)
+RSYSLOG_DEPENDENCIES += gnutls
+RSYSLOG_CONF_OPTS += --enable-gnutls
+else
+RSYSLOG_CONF_OPTS += --disable-gnutls
+endif
+
 define RSYSLOG_INSTALL_INIT_SYSV
 	$(INSTALL) -m 0755 -D package/rsyslog/S01logging \
 		$(TARGET_DIR)/etc/init.d/S01logging
