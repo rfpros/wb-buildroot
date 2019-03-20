@@ -1,7 +1,7 @@
-From bae8893ee3e306fc096be1676e05a52c9f6c8be9 Mon Sep 17 00:00:00 2001
+From 2fbe34703fc8320327792d341387d8ab65e819c4 Mon Sep 17 00:00:00 2001
 From: Ben Whitten <ben.whitten@lairdtech.com>
 Date: Thu, 20 Apr 2017 12:08:05 +0100
-Subject: [PATCH 2/2] laird: Allow connection to IPv6 address
+Subject: [PATCH 2/3] laird: Allow connection to IPv6 address
 
 AF_UNSPEC allows connection to both IPv4 and 6 but fails at localhost,
 as we have no local network server its not a problem.
@@ -12,10 +12,10 @@ Bug 10956
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/lora_pkt_fwd/src/lora_pkt_fwd.c b/lora_pkt_fwd/src/lora_pkt_fwd.c
-index 2bc2cd8..cda4d98 100644
+index ae94c84..35287d4 100644
 --- a/lora_pkt_fwd/src/lora_pkt_fwd.c
 +++ b/lora_pkt_fwd/src/lora_pkt_fwd.c
-@@ -1052,7 +1052,9 @@ int main(void)
+@@ -1123,7 +1123,9 @@ int main(void)
  
      /* prepare hints to open network sockets */
      memset(&hints, 0, sizeof hints);
@@ -27,5 +27,5 @@ index 2bc2cd8..cda4d98 100644
  
      /* look for server address w/ upstream port */
 -- 
-2.7.4
+2.17.1
 
