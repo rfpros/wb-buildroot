@@ -8,6 +8,7 @@ LIBLORAGW_VERSION = v5.0.1
 LIBLORAGW_SITE = https://github.com/Lora-net/lora_gateway.git
 LIBLORAGW_SITE_METHOD = git
 LIBLORAGW_INSTALL_STAGING = YES
+LIBLORAGW_DEPENDENCIES = uboot-tools
 
 define LIBLORAGW_BUILD_CMDS
 	CC="$(TARGET_CC)" $(MAKE) -C $(@D)
