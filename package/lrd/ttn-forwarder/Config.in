@@ -1,6 +1,6 @@
 config BR2_PACKAGE_TTN_FORWARDER
 	bool "ttn-forwarder"
-	depends on BR2_PACKAGE_HOST_GO_ARCH_SUPPORTS
+	depends on BR2_PACKAGE_HOST_GO_ARCH_SUPPORTS && BR2_PACKAGE_LIBLORAGW
 	help
       Packet forwarder to make the link between a LoRa concentrator
       and The Things Network's backend.
