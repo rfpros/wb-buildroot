@@ -18,7 +18,7 @@ sed -i "1i#$LAIRD_RELEASE_STRING" "$TARGET_DIR/$BR2_LRD_PRODUCT-$LAIRD_RELEASE_S
 TARFILE="$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.tar"
 
 # generate tar.bz2 to be inserted in script
-tar -cvf $IMAGESDIR/$TARFILE --directory="$TARGET_DIR/usr/bin/" athtestcmd tcmd.sh
+tar -cvf $IMAGESDIR/$TARFILE --directory="$TARGET_DIR/usr/bin/" lru tcmd.sh
 tar --append --file="$IMAGESDIR/$TARFILE" -C "$TARGET_DIR/usr/sbin/" smu_cli
 (cd "$TARGET_DIR/lib/firmware/ath6k/AR6003/hw2.1.1" && tar --append --file="$IMAGESDIR/$TARFILE" athtcmd*)
 tar --append --file="$IMAGESDIR/$TARFILE" -C "$TARGET_DIR/" "$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.manifest"

@@ -52,8 +52,8 @@ case ${1#--} in
     ;;
 
   '') ## setup for athtestcmd
-    test -x /usr/bin/athtestcmd \
-      || { echo "error - athtestcmd not available"; exit 1; }
+    test -x /usr/bin/lru \
+      || { echo "error - lru not available"; exit 1; }
 
     # remove any configuration
     do_ ifrc -v -n wlan0 stop
