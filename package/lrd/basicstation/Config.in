@@ -1,0 +1,6 @@
+config BR2_PACKAGE_BASICSTATION
+	bool "basicstation"
+	select BR2_PACKAGE_MBEDTLS
+	help
+      Semtech - Basic Station
+
