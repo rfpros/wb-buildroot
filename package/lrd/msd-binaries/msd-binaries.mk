@@ -11,7 +11,7 @@ else ifeq ($(BR2_PACKAGE_MSD_BINARIES),y)
 endif
 
 ifeq ($(MSD_BINARIES_SOURCE_LOCATION),laird_internal)
-  MSD_BINARIES_SITE_URL = https://files.devops./builds/linux/$(MSD_BINARIES_PLATFORM)/laird/$(MSD_BINARIES_VERSION)
+  MSD_BINARIES_SITE_URL = https://files.devops.rfpros.com/builds/linux/$(MSD_BINARIES_PLATFORM)/laird/$(MSD_BINARIES_VERSION)
 else
   MSD_BINARIES_SITE_URL = https://github.com/LairdCP/wb-package-archive/raw/master
 endif
