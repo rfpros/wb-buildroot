@@ -16,8 +16,6 @@ if [ $word -gt 2359296 ]
 then
 	echo "kernel size exceeded 18 block limit, failed"
 	exit 1
-else
-	echo "kernel size less than 18 block limit"
 fi
 
 echo "WB45n POST IMAGE script: done."
