@@ -15,6 +15,7 @@ endef
 define BASICSTATION_INSTALL_TARGET_CMDS
 mkdir -p $(TARGET_DIR)/opt/lora/basicstation
 $(INSTALL) -m 0755 $(@D)/build-laird-std/bin/station $(TARGET_DIR)/opt/lora/basicstation/station
+$(INSTALL) -m 0644 $(@D)/examples/laird/station.conf $(TARGET_DIR)/opt/lora/basicstation/station.conf
 endef
 
 $(eval $(generic-package))
