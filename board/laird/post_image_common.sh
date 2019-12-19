@@ -30,4 +30,14 @@ if cd "$IMAGESDIR"; then
   $TOPDIR/board/laird/mkfwusi.sh
   cd - >/dev/null
 fi
+
+if [ ${BR2_LRD_PLATFORM} == "wb45n" ]; then
+  word=$(stat -c "%s" ${IMAGESDIR}/kernel.bin)
+  if [ $word -gt 2359296 ]
+  then
+    echo "kernel size exceeded 18 block limit, failed"
+    exit 1
+  fi
+fi
+
 echo "COMMON POST IMAGE script: done."
