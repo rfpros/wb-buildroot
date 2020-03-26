@@ -1,43 +1,37 @@
-IMAGESDIR="$1"
-
-export BR2_LRD_PRODUCT=reg45n
-export BR2_LRD_PLATFORM=msd45n
-
 # enable tracing and exit on errors
 set -x -e
 
-if [ -z "$LAIRD_RELEASE_STRING" ]; then
-  LAIRD_RELEASE_STRING=$(date +%Y%m%d)
+BR2_LRD_PRODUCT="$(sed -n 's,^BR2_DEFCONFIG=".*/\(.*\)_defconfig"$,\1,p' ${BR2_CONFIG})"
+
+echo "${BR2_LRD_PRODUCT^^} POST Image script: starting..."
+
+mkdir -p "${BINARIES_DIR}"
+
+RELEASE_FILE=${BR2_LRD_PRODUCT}
+if [ -n "${VERSION}" ]; then
+	RELEASE_FILE+="-${VERSION}"
+
+	mv -f "${TARGET_DIR}/${BR2_LRD_PRODUCT}.manifest" \
+		"${TARGET_DIR}/${RELEASE_FILE}.manifest"
 fi
 
-# insert version number
-sed -i "2i#$LAIRD_RELEASE_STRING" $TARGET_DIR/reg_tools.sh
-mv "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest" "$TARGET_DIR/$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.manifest"
-sed -i "1i#$LAIRD_RELEASE_STRING" "$TARGET_DIR/$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.manifest"
+sed -i "2i#${VERSION}" "${TARGET_DIR}/reg_tools.sh"
 
-TARFILE="$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.tar"
+TARFILE="${BINARIES_DIR}/${RELEASE_FILE}.tar.bz2"
 
-# generate tar.bz2 to be inserted in script
-tar -cvf $IMAGESDIR/$TARFILE --directory="$TARGET_DIR/usr/bin/" lru tcmd.sh
-tar --append --file="$IMAGESDIR/$TARFILE" -C "$TARGET_DIR/usr/sbin/" smu_cli
-(cd "$TARGET_DIR/lib/firmware/ath6k/AR6003/hw2.1.1" && tar --append --file="$IMAGESDIR/$TARFILE" athtcmd*)
-tar --append --file="$IMAGESDIR/$TARFILE" -C "$TARGET_DIR/" "$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.manifest"
-bzip2 -f "$IMAGESDIR/$TARFILE"
+tar -C "${TARGET_DIR}" -cjf "${TARFILE}" --transform 's,.*/,,' \
+	--owner=0 --group=0 --numeric-owner \
+	${RELEASE_FILE}.manifest \
+	$(sed 's,^/,,' "${TARGET_DIR}/${RELEASE_FILE}.manifest")
 
-# generate sha to validate package
-CURRENT_PWD=`pwd`
-cd $IMAGESDIR
-sha256sum "$TARFILE.bz2" > "$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.sha"
-cd $CURRENT_PWD
+# generate SHA to validate package
+sha256sum "${TARFILE}" > "${BINARIES_DIR}/${RELEASE_FILE}.sha"
 
-# generate self-extracting script and repackage tar.bz2 to contain script and sum file
-cat $TARGET_DIR/reg_tools.sh "$IMAGESDIR/$TARFILE.bz2" > "$IMAGESDIR/$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.sh"
-chmod +x "$IMAGESDIR/$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.sh"
+# generate self-extracting script and repackage tar.bz2 to contain script and binary file
+cat "${TARGET_DIR}/reg_tools.sh" "${TARFILE}" > "${BINARIES_DIR}/${RELEASE_FILE}.sh"
+chmod +x "${BINARIES_DIR}/${RELEASE_FILE}.sh"
 
-# remove old tarfile and recreate new one containing self-extracting script and sha file
-rm "$IMAGESDIR/$TARFILE.bz2"
-tar -cvf "$IMAGESDIR/$TARFILE" --directory="$IMAGESDIR" "$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.sh"
-tar --append --file="$IMAGESDIR/$TARFILE" --directory="$IMAGESDIR" "$BR2_LRD_PRODUCT-$LAIRD_RELEASE_STRING.sha"
-bzip2 -f "$IMAGESDIR/$TARFILE"
+# create new tar.bz2 containing self-extracting script and SHA file
+tar -cjf "${TARFILE}" -C "${BINARIES_DIR}" "${RELEASE_FILE}.sh" "${RELEASE_FILE}.sha"
 
-echo "REG45n POST BUILD script: done."
+echo "${BR2_LRD_PRODUCT^^} POST Image script: done."
