@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2015, Laird
+# Copyright (c) 2015, Laird Connectivity
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
 # copyright notice and this permission notice appear in all copies.
@@ -12,7 +12,7 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 #
-# contact: ews-support@lairdtech.com
+# contact: support@lairdconnect.com
 
 # tcmd.sh
 # Provides athtestcmd support.
@@ -42,6 +42,9 @@ else
         return 0
 fi
 
+# check if NM build or not
+test -x /usr/lib/libnm.so && NM=1
+
 do_() {
   echo -e "+ $@"; $@; return $?
 }
@@ -56,12 +59,23 @@ case ${1#--} in
       || { echo "error - lru not available"; exit 1; }
 
     # remove any configuration
-    do_ ifrc -v -n wlan0 stop
+    if [ -z "$NM" ]; then
+      do_ ifrc -v -n wlan0 stop
+    else
+      do_ systemctl stop NetworkManager.service
+      do_ kill -9 `pidof sdcsupp`
+      do_ modprobe -r ath6kl_sdio
+      do_ sleep 3
+    fi
     echo
     (
-      cd /lib/modules/`uname -r`/kernel/drivers/net/wireless/ath/ath6kl
-      do_ insmod ath6kl_core.ko testmode=1
-      do_ insmod ath6kl_sdio.ko $ATH6K_SDIO_PARAMS
+      if [ -z "$NM" ]; then
+        do_ modprobe ath6kl_core testmode=1 heart_beat_poll=0
+        do_ modprobe ath6kl_sdio $ATH6K_SDIO_PARAMS
+      else
+        do_ modprobe ath6kl_core testmode=1 heart_beat_poll=0
+        do_ modprobe ath6kl_sdio
+      fi
     )
     sleep 3
     ip link set wlan0 up
@@ -73,8 +87,14 @@ case ${1#--} in
     dmesg |sed -n '/ath6kl: '${CHIPSET}' .* fw/h;$g;${s/\\[^ ]\+//;p}'
     ;;
 
-  off|done) ## unload drivers
+  off|done) ## reload drivers
+    if [ -z "$NM" ]; then
       do_ ifrc -v -n wlan0 restart
+    else
+      do_ modprobe -r ath6kl_sdio
+      do_ modprobe  ath6kl_sdio
+      do_ systemctl start NetworkManager.service
+    fi
     ;;
 
   show|check) ## list firmware files
