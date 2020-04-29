@@ -2318,14 +2318,14 @@ diff -urN linux-3.2/arch/arm/mach-at91/board-wb40n.c linux-3.2-lt1/arch/arm/mach
 +
 +static struct sam9_smc_config __initdata wb40n_nand_smc_config = {
 +	.ncs_read_setup		= 0,
-+	.nrd_setup		= 1,
++	.nrd_setup		= 2,
 +	.ncs_write_setup	= 0,
-+	.nwe_setup		= 1,
++	.nwe_setup		= 2,
 +
 +	.ncs_read_pulse		= 6,
-+	.nrd_pulse		= 3,
++	.nrd_pulse		= 2,
 +	.ncs_write_pulse	= 6,
-+	.nwe_pulse		= 3,
++	.nwe_pulse		= 2,
 +
 +	.read_cycle		= 6,
 +	.write_cycle		= 6,
