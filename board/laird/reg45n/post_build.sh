@@ -1,26 +1,30 @@
-
-export BR2_LRD_PRODUCT=reg45n
-export BR2_LRD_PLATFORM=msd45n
-
-echo "REG45n POST BUILD script: starting..."
-
 # enable tracing and exit on errors
 set -x -e
 
-# generate manifest file
-echo "/usr/bin/dbgParser" > "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest"
-echo "/usr/bin/athtestcmd" >> "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest"
-echo "/usr/bin/wmiconfig" >> "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest"
-echo "/etc/ar6kl-tools/dbgParser/include/dbglog.h" >> "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest"
-echo "/etc/ar6kl-tools/dbgParser/include/dbglog_id.h" >> "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest"
-echo "/usr/sbin/smu_cli" >> "$TARGET_DIR/$BR2_LRD_PRODUCT.manifest"
+BR2_LRD_PRODUCT="$(sed -n 's,^BR2_DEFCONFIG=".*/\(.*\)_defconfig"$,\1,p' ${BR2_CONFIG})"
 
-# remove unneeded bins
-rm -f $TARGET_DIR/usr/bin/sdc_cli
-rm -f $TARGET_DIR/usr/bin/dhcp_injector
+echo "${BR2_LRD_PRODUCT^^} POST BUILD script: starting..."
+
+LIBEDIT=$(readlink $TARGET_DIR/usr/lib/libedit.so)
+LIBEDITLRD=${LIBEDIT/libedit./libedit.lrd.}
+
+# generate manifest file
+echo "/usr/bin/lru
+/usr/sbin/smu_cli
+/usr/bin/tcmd.sh
+/usr/lib/${LIBEDITLRD}" \
+> "${TARGET_DIR}/${BR2_LRD_PRODUCT}.manifest"
+
+ls "${TARGET_DIR}/lib/firmware/ath6k/AR6003/hw2.1.1/athtcmd"* | sed "s,^${TARGET_DIR},," \
+	>> "${TARGET_DIR}/${BR2_LRD_PRODUCT}.manifest"
+
+cp "${TARGET_DIR}/usr/lib/${LIBEDIT}" "${TARGET_DIR}/usr/lib/${LIBEDITLRD}"
+
+# move tcmd.sh into package and add to manifest
+cp board/laird/reg45n/rootfs-additions/tcmd.sh $TARGET_DIR/usr/bin
 
 # make sure board script is not in target directory and copy it from rootfs-additions
 rm -f $TARGET_DIR/reg_tools.sh
 cp board/laird/reg45n/rootfs-additions/reg_tools.sh $TARGET_DIR
 
-echo "REG45n POST BUILD script: done."
+echo "${BR2_LRD_PRODUCT^^} POST BUILD script: done."
