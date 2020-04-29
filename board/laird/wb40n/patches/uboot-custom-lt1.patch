@@ -93,8 +93,8 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +++ uboot-custom/board/atmel/wb40n/wb40n.c	2013-05-15 17:09:18.757226998 -0500
 @@ -0,0 +1,206 @@
 +/*
-+ * Copyright (c) 2010-2012, Laird Technologies
-+ * Christopher Cole <chris.cole@lairdtech.com>
++ * Copyright (c) 2010-2012, Laird Connectivity
++ * Christopher Cole <chris.cole@lairdconnect.com>
 + *
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License as
@@ -149,10 +149,10 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +	writel(AT91_SMC_SETUP_NWE(1) | AT91_SMC_SETUP_NCS_WR(0) |
 +		AT91_SMC_SETUP_NRD(1) | AT91_SMC_SETUP_NCS_RD(0),
 +		&smc->cs[3].setup);
-+	writel(AT91_SMC_PULSE_NWE(3) | AT91_SMC_PULSE_NCS_WR(3) |
-+		AT91_SMC_PULSE_NRD(3) | AT91_SMC_PULSE_NCS_RD(3),
++	writel(AT91_SMC_PULSE_NWE(3) | AT91_SMC_PULSE_NCS_WR(6) |
++		AT91_SMC_PULSE_NRD(3) | AT91_SMC_PULSE_NCS_RD(6),
 +		&smc->cs[3].pulse);
-+	writel(AT91_SMC_CYCLE_NWE(5) | AT91_SMC_CYCLE_NRD(5),
++	writel(AT91_SMC_CYCLE_NWE(6) | AT91_SMC_CYCLE_NRD(6),
 +		&smc->cs[3].cycle);
 +	writel(AT91_SMC_MODE_RM_NRD | AT91_SMC_MODE_WM_NWE |
 +		AT91_SMC_MODE_EXNW_DISABLE |
@@ -161,7 +161,8 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +#else /* CONFIG_SYS_NAND_DBW_8 */
 +		AT91_SMC_MODE_DBW_8 |
 +#endif
-+		AT91_SMC_MODE_TDF_CYCLE(2),
++		AT91_SMC_MODE_TDF |
++		AT91_SMC_MODE_TDF_CYCLE(12),
 +		&smc->cs[3].mode);
 +
 +	/* Configure RDY/BSY */
@@ -169,7 +170,6 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +
 +	/* Enable NandFlash */
 +	at91_set_gpio_output(CONFIG_SYS_NAND_ENABLE_PIN, 1);
-+
 +}
 +#endif
 +
@@ -325,12 +325,12 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +++ uboot-custom/include/configs/wb40n.h	2013-12-04 09:27:44.407194799 -0600
 @@ -0,0 +1,200 @@
 +/*
-+ * Copyright (c) 2010-2012 Laird technologies
++ * Copyright (c) 2010-2020 Laird Connectivity
 + * All rights reserved.
 + *
 + * ----------------------------------------------------------------------------
 + * File Name:		wb40n.h
-+ * Creation:		Chris Cole, chris.cole@lairdtech.com
++ * Creation:		Chris Cole, chris.cole@lairdconnect.com
 + * Date:		June 16, 2011
 + *-----------------------------------------------------------------------------
 + */

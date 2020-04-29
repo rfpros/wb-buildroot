@@ -2318,20 +2318,20 @@ diff -urN linux-3.2/arch/arm/mach-at91/board-wb40n.c linux-3.2-lt1/arch/arm/mach
 +
 +static struct sam9_smc_config __initdata wb40n_nand_smc_config = {
 +	.ncs_read_setup		= 0,
-+	.nrd_setup		= 2,
++	.nrd_setup		= 1,
 +	.ncs_write_setup	= 0,
-+	.nwe_setup		= 2,
++	.nwe_setup		= 1,
 +
-+	.ncs_read_pulse		= 4,
-+	.nrd_pulse		= 4,
-+	.ncs_write_pulse	= 4,
-+	.nwe_pulse		= 4,
++	.ncs_read_pulse		= 6,
++	.nrd_pulse		= 3,
++	.ncs_write_pulse	= 6,
++	.nwe_pulse		= 3,
 +
-+	.read_cycle		= 7,
-+	.write_cycle		= 7,
++	.read_cycle		= 6,
++	.write_cycle		= 6,
 +
-+	.mode			= AT91_SMC_READMODE | AT91_SMC_WRITEMODE | AT91_SMC_EXNWMODE_DISABLE,
-+	.tdf_cycles		= 3,
++	.mode			= AT91_SMC_READMODE | AT91_SMC_WRITEMODE | AT91_SMC_EXNWMODE_DISABLE | AT91_SMC_TDFMODE,
++	.tdf_cycles		= 12,
 +};
 +
 +static void __init wb40n_add_device_nand(void)
@@ -3569,3 +3569,34 @@ diff -urN linux-3.2/kernel/timeconst.pl linux-3.2-lt1/kernel/timeconst.pl
  	}
  	output($hz, @val);
 
+--- a/drivers/mtd/nand/nand_bbt.c
++++ b/drivers/mtd/nand/nand_bbt.c
+@@ -324,6 +324,7 @@ static int scan_read_raw_oob(struct mtd_info *mtd, uint8_t *buf, loff_t offs,
+ 
+ 		buf += mtd->oobsize + mtd->writesize;
+ 		len -= mtd->writesize;
++		offs += mtd->writesize;
+ 	}
+ 	return 0;
+ }
+@@ -390,7 +390,7 @@ static int read_abs_bbts(struct mtd_info *mtd, uint8_t *buf,
+ 	/* Read the mirror version, if available */
+ 	if (md && (md->options & NAND_BBT_VERSION)) {
+ 		scan_read_raw(mtd, buf, (loff_t)md->pages[0] << this->page_shift,
+-			      mtd->writesize, td);
++			      mtd->writesize, md);
+ 		md->version[0] = buf[bbt_get_ver_offs(mtd, md)];
+ 		pr_info("Bad block table at page %d, version 0x%02X\n",
+ 			 md->pages[0], md->version[0]);
+
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -2229,7 +2229,7 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
+ 		uint8_t *wbuf = buf;
+ 
+ 		/* Partial page write? */
+-		if (unlikely(column || writelen < (mtd->writesize - 1))) {
++		if (unlikely(column || writelen < mtd->writesize)) {
+ 			cached = 0;
+ 			bytes = min_t(int, bytes - column, (int) writelen);
+ 			chip->pagebuf = -1;

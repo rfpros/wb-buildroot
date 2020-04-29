@@ -80,7 +80,7 @@ diff -urN a/board/wb40n/wb40n.c b/board/wb40n/wb40n.c
 +/* ----------------------------------------------------------------------------
 + *         ATMEL Microcontroller Software Support
 + * ----------------------------------------------------------------------------
-+ * Copyright (c) 2008, Atmel Corporation
++ * Copyright (c) 2008, Laird Connectivity
 +
 + * All rights reserved.
 + *
@@ -206,7 +206,7 @@ diff -urN a/board/wb40n/wb40n.c b/board/wb40n/wb40n.c
 +	sdramc_initialize(&sdramc_config, AT91C_BASE_CS1);
 +
 +	/* The SDRAM is put in self-refresh mode to reduce current draw AND reduce EMI. */
-+	writel(((readl(AT91C_BASE_SDRAMC + SDRAMC_LPR)) & ~AT91C_SDRAMC_LPCB )| AT91C_SDRAMC_LPCB_SELF_REFRESH, AT91C_BASE_SDRAMC + SDRAMC_LPR);
++	//writel(((readl(AT91C_BASE_SDRAMC + SDRAMC_LPR)) & ~AT91C_SDRAMC_LPCB )| AT91C_SDRAMC_LPCB_SELF_REFRESH, AT91C_BASE_SDRAMC + SDRAMC_LPR);
 +}
 +#endif /* #ifdef CONFIG_SDRAM */
 +
@@ -341,7 +341,6 @@ diff -urN a/board/wb40n/wb40n.c b/board/wb40n/wb40n.c
 +		{"MCDA2",	AT91C_PIN_PA(10), 0, PIO_PULLUP, PIO_PERIPH_A},
 +		{"MCDA3",	AT91C_PIN_PA(11), 0, PIO_PULLUP, PIO_PERIPH_A},
 +		{(char *)0, 0, 0, PIO_DEFAULT, PIO_PERIPH_A},
-+
 +	};
 +
 +	/* Configure the PIO controller */
@@ -372,27 +371,28 @@ diff -urN a/board/wb40n/wb40n.c b/board/wb40n/wb40n.c
 +	writel(reg, AT91C_BASE_CCFG + CCFG_EBICSA);
 +
 +	/* Configure SMC CS3 */
-+	writel((AT91C_SMC_NWESETUP_(2)
++	writel((AT91C_SMC_NWESETUP_(1)
 +		| AT91C_SMC_NCS_WRSETUP_(0)
-+		| AT91C_SMC_NRDSETUP_(2)
++		| AT91C_SMC_NRDSETUP_(1)
 +		| AT91C_SMC_NCS_RDSETUP_(0)),
 +		AT91C_BASE_SMC + SMC_SETUP3);
 +
-+	writel((AT91C_SMC_NWEPULSE_(4)
-+		| AT91C_SMC_NCS_WRPULSE_(4)
-+		| AT91C_SMC_NRDPULSE_(4)
-+		| AT91C_SMC_NCS_RDPULSE_(4)),
++	writel((AT91C_SMC_NWEPULSE_(3)
++		| AT91C_SMC_NCS_WRPULSE_(6)
++		| AT91C_SMC_NRDPULSE_(3)
++		| AT91C_SMC_NCS_RDPULSE_(6)),
 +		AT91C_BASE_SMC + SMC_PULSE3);
 +
-+	writel((AT91C_SMC_NWECYCLE_(7)
-+		|  AT91C_SMC_NRDCYCLE_(7)),
++	writel((AT91C_SMC_NWECYCLE_(6)
++		|  AT91C_SMC_NRDCYCLE_(6)),
 +		AT91C_BASE_SMC + SMC_CYCLE3);
 +
 +	writel((AT91C_SMC_READMODE
 +		| AT91C_SMC_WRITEMODE
 +		| AT91C_SMC_NWAITM_NWAIT_DISABLE
-+		| AT91C_SMC_DBW_WIDTH_BITS_16
-+		| AT91_SMC_TDF_(3)),
++		| AT91C_SMC_DBW_WIDTH_BITS_8
++		| AT91C_SMC_TDFEN
++		| AT91_SMC_TDF_(12)),
 +		AT91C_BASE_SMC + SMC_CTRL3);
 +
 +	/* Configure the PIO controller */
