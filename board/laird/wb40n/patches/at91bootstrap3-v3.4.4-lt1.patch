@@ -596,8 +596,8 @@ diff -urN a/board/wb40n/wb40n_defconfig b/board/wb40n/wb40n_defconfig
 +#
 +# NAND Flash configuration
 +#
-+# CONFIG_ENABLE_SW_ECC is not set
-+CONFIG_NANDFLASH_SMALL_BLOCKS=y
++CONFIG_ENABLE_SW_ECC=y
++# CONFIG_NANDFLASH_SMALL_BLOCKS is not set
 +# ALLOW_NANDFLASH_RECOVERY is not set
 +CONFIG_BOOTSTRAP_MAXSIZE="23000"
 +CONFIG_PROJECT="nandflash"
@@ -622,42 +622,6 @@ diff -urN a/board/wb40n/wb40n_defconfig b/board/wb40n/wb40n_defconfig
 +CONFIG_HW_INIT=y
 +# CONFIG_USER_HW_INIT is not set
 +CONFIG_THUMB=y
-diff -urN a/driver/Config.in.memory b/driver/Config.in.memory
---- a/driver/Config.in.memory	2012-11-20 17:40:26.000000000 -0500
-+++ b/driver/Config.in.memory	2012-12-02 15:55:36.075502553 -0500
-@@ -44,7 +44,7 @@
- 
- config	ALLOW_SDRAM_16BIT
- 	bool
--	default n
-+	default y
- 
- choice
- 	prompt "RAM size"
-diff -urN a/driver/Config.in.nandflash b/driver/Config.in.nandflash
---- a/driver/Config.in.nandflash	2012-11-20 17:40:26.000000000 -0500
-+++ b/driver/Config.in.nandflash	2012-12-02 15:55:36.075502553 -0500
-@@ -3,7 +3,7 @@
- 
- config	CONFIG_ENABLE_SW_ECC
- 	bool
--	default y
-+	default n
- 	depends on CONFIG_NANDFLASH && !CPU_HAS_PMECC
- 
- config	CONFIG_ENABLE_SW_ECC
-diff -urN a/driver/nandflash.c b/driver/nandflash.c
---- a/driver/nandflash.c	2012-11-20 17:40:26.000000000 -0500
-+++ b/driver/nandflash.c	2012-12-02 15:55:36.075502553 -0500
-@@ -857,7 +857,7 @@
- 	for (page = 0; page < 2; page++) {
- 		nand_read_sector(nand, row_address + page, buffer, ZONE_INFO);
- 		if (*(buffer + nand->pagesize + nand->ecclayout->badblockpos) != 0xff)
--			return -1;
-+			return 0; // -1;
- 	}
- 
- 	return 0;
 diff -urN a/include/board.h b/include/board.h
 --- a/include/board.h	2012-11-20 17:40:26.000000000 -0500
 +++ b/include/board.h	2012-12-02 15:55:36.075502553 -0500
@@ -677,7 +641,7 @@ diff -urN a/main.c b/main.c
  	return 0;
  }
  
-+const char version_string[]="Version: 20121203";
++const char version_string[]="Version: 20200505";
 +
  static void display_banner (void)
  {

@@ -18,7 +18,7 @@ index 46756d0..2aeea90 100644
  DATE := $(shell date)
  VERSION := 3.4
 -REVISION := 4
-+REVISION := 4-laird2
++REVISION := 4-laird3
  
  noconfig_targets:= menuconfig defconfig $(CONFIG) oldconfig
  
