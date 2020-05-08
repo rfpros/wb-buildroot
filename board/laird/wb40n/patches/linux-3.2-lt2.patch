@@ -825,7 +825,7 @@ diff -urN linux-3.2/arch/arm/configs/wb40n_defconfig linux-3.2-lt1/arch/arm/conf
 +# CONFIG_MTD_NAND_ECC_SMC is not set
 +CONFIG_MTD_NAND=y
 +# CONFIG_MTD_NAND_VERIFY_WRITE is not set
-+# CONFIG_MTD_NAND_ECC_BCH is not set
++CONFIG_MTD_NAND_ECC_BCH=y
 +# CONFIG_MTD_SM_COMMON is not set
 +# CONFIG_MTD_NAND_MUSEUM_IDS is not set
 +# CONFIG_MTD_NAND_GPIO is not set
@@ -3600,3 +3600,14 @@ diff -urN linux-3.2/kernel/timeconst.pl linux-3.2-lt1/kernel/timeconst.pl
  			cached = 0;
  			bytes = min_t(int, bytes - column, (int) writelen);
  			chip->pagebuf = -1;
+--- a/drivers/mtd/nand/atmel_nand.c
++++ b/drivers/mtd/nand/atmel_nand.c
+@@ -538,7 +538,7 @@
+ 				"regs\nFalling back on software ECC\n");
+ 	}
+ 
+-	nand_chip->ecc.mode = NAND_ECC_SOFT;	/* enable ECC */
++	nand_chip->ecc.mode = NAND_ECC_SOFT_BCH;	/* enable ECC */
+ 	if (no_ecc)
+ 		nand_chip->ecc.mode = NAND_ECC_NONE;
+ 	if (hard_ecc && regs) {

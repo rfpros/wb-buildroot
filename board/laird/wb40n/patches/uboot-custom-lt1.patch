@@ -323,7 +323,7 @@ diff -urNa uboot-custom/common/env_common.c uboot-custom/common/env_common.c
 diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb40n.h
 --- uboot-custom/include/configs/wb40n.h	1969-12-31 18:00:00.000000000 -0600
 +++ uboot-custom/include/configs/wb40n.h	2013-12-04 09:27:44.407194799 -0600
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,202 @@
 +/*
 + * Copyright (c) 2010-2020 Laird Connectivity
 + * All rights reserved.
@@ -444,6 +444,8 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#define CONFIG_SYS_NAND_MASK_CLE	(1 << 22)
 +#define CONFIG_SYS_NAND_ENABLE_PIN	AT91_PIN_PC14
 +#define CONFIG_SYS_NAND_READY_PIN	AT91_PIN_PC13
++#define CONFIG_NAND_ECC_BCH
++#define CONFIG_BCH
 +#endif
 +
 +/* NOR flash - no real flash on this board */
