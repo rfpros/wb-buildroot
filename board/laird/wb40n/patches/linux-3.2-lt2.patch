@@ -1,7 +1,7 @@
 diff -urN linux-3.2/arch/arm/configs/wb40n_defconfig linux-3.2-lt1/arch/arm/configs/wb40n_defconfig
 --- linux-3.2/arch/arm/configs/wb40n_defconfig	1969-12-31 19:00:00.000000000 -0500
 +++ linux-3.2-lt1/arch/arm/configs/wb40n_defconfig	2012-11-25 13:19:42.000000000 -0500
-@@ -0,0 +1,2056 @@
+@@ -0,0 +1,2058 @@
 +#
 +# Automatically generated file; DO NOT EDIT.
 +# Linux/arm 3.2.0 Kernel Configuration
@@ -825,6 +825,7 @@ diff -urN linux-3.2/arch/arm/configs/wb40n_defconfig linux-3.2-lt1/arch/arm/conf
 +# CONFIG_MTD_NAND_ECC_SMC is not set
 +CONFIG_MTD_NAND=y
 +# CONFIG_MTD_NAND_VERIFY_WRITE is not set
++CONFIG_MTD_NAND_BCH=y
 +CONFIG_MTD_NAND_ECC_BCH=y
 +# CONFIG_MTD_SM_COMMON is not set
 +# CONFIG_MTD_NAND_MUSEUM_IDS is not set
@@ -2047,6 +2048,7 @@ diff -urN linux-3.2/arch/arm/configs/wb40n_defconfig linux-3.2-lt1/arch/arm/conf
 +CONFIG_LZO_DECOMPRESS=y
 +# CONFIG_XZ_DEC is not set
 +# CONFIG_XZ_DEC_BCJ is not set
++CONFIG_BCH=y
 +CONFIG_TEXTSEARCH=y
 +CONFIG_TEXTSEARCH_KMP=m
 +CONFIG_TEXTSEARCH_BM=m
