@@ -323,7 +323,7 @@ diff -urNa uboot-custom/common/env_common.c uboot-custom/common/env_common.c
 diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb40n.h
 --- uboot-custom/include/configs/wb40n.h	1969-12-31 18:00:00.000000000 -0600
 +++ uboot-custom/include/configs/wb40n.h	2013-12-04 09:27:44.407194799 -0600
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,209 @@
 +/*
 + * Copyright (c) 2010-2020 Laird Connectivity
 + * All rights reserved.
@@ -517,11 +517,18 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +					"128k(env)ro," \
 +					"2M(kernel-a)," \
 +					"2M(kernel-b)," \
-+					"29.5M(rootfs-a)," \
-+					"29.5M(rootfs-b)," \
++					"30208k(rootfs-a)," \
++					"30208k(rootfs-b)," \
 +					"-(logs)"
 +
 +#endif
++
++#define CONFIG_EXTRA_ENV_SETTINGS       \
++		"autoload=no\0" \
++		"autostart=no\0" \
++		"mtdids=" MTDIDS_DEFAULT "\0" \
++		"mtdparts=" MTDPARTS_DEFAULT "\0" \
++		"\0"
 +
 +#define CONFIG_HW_WATCHDOG		1
 +#define CONFIG_AT91SAM9_WATCHDOG	1
@@ -538,3 +545,33 @@ diff -urNa uboot-custom/tools/env/fw_env_main.c uboot-custom/tools/env/fw_env_ma
 	if (-1 == lockfd) {
 		fprintf(stderr, "Error opening lock file %s\n", lockname);
 		return EXIT_FAILURE;
+diff --git a/common/console.c b/common/console.c
+--- a/common/console.c
++++ b/common/console.c
+@@ -28,6 +28,7 @@
+ #include <stdio_dev.h>
+ #include <exports.h>
+ #include <environment.h>
++#include <watchdog.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+@@ -294,6 +295,7 @@
+ 		 * Effectively poll for input wherever it may be available.
+ 		 */
+ 		for (;;) {
++			WATCHDOG_RESET();
+ 			/*
+ 			 * Upper layer may have already called tstc() so
+ 			 * check for that first.
+--- a/drivers/watchdog/at91sam9_wdt.c
++++ b/drivers/watchdog/at91sam9_wdt.c
+@@ -33,7 +33,7 @@
+ #define ticks_to_ms(t)	(((t + 1) * 1000) >> 8)
+ 
+ /* Hardware timeout in seconds */
+-#define WDT_HW_TIMEOUT 2
++#define WDT_HW_TIMEOUT 5
+ 
+ /*
+  * Set the watchdog time interval in 1/256Hz (write-once)
