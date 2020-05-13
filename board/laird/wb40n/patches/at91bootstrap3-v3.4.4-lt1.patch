@@ -608,7 +608,7 @@ diff -urN a/board/wb40n/wb40n_defconfig b/board/wb40n/wb40n_defconfig
 +# CONFIG_LOAD_64KB is not set
 +CONFIG_IMG_ADDRESS="0x00020000"
 +CONFIG_IMG_SIZE="0x00060000"
-+CONFIG_JUMP_ADDR="0x21F00000"
++CONFIG_JUMP_ADDR="0x21000000"
 +
 +#
 +# U-Boot Image Storage Setup

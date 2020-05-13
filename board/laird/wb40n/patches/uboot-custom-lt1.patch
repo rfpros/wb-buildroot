@@ -91,7 +91,7 @@ diff -urNa uboot-custom/board/atmel/wb40n/Makefile uboot-custom/board/atmel/wb40
 diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n/wb40n.c
 --- uboot-custom/board/atmel/wb40n/wb40n.c	1969-12-31 18:00:00.000000000 -0600
 +++ uboot-custom/board/atmel/wb40n/wb40n.c	2013-05-15 17:09:18.757226998 -0500
-@@ -0,0 +1,206 @@
+@@ -0,0 +1,197 @@
 +/*
 + * Copyright (c) 2010-2012, Laird Connectivity
 + * Christopher Cole <chris.cole@lairdconnect.com>
@@ -121,9 +121,6 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +#include <asm/arch/at91_rstc.h>
 +#include <asm/arch/gpio.h>
 +
-+#if defined(CONFIG_RESET_PHY_R) && defined(CONFIG_MACB)
-+#include <net.h>
-+#endif
 +#include <netdev.h>
 +
 +DECLARE_GLOBAL_DATA_PTR;
@@ -284,12 +281,6 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +	return 0;
 +}
 +
-+#ifdef CONFIG_RESET_PHY_R
-+void reset_phy(void)
-+{
-+}
-+#endif
-+
 +int board_eth_init(bd_t *bis)
 +{
 +	int rc = 0;
@@ -323,7 +314,7 @@ diff -urNa uboot-custom/common/env_common.c uboot-custom/common/env_common.c
 diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb40n.h
 --- uboot-custom/include/configs/wb40n.h	1969-12-31 18:00:00.000000000 -0600
 +++ uboot-custom/include/configs/wb40n.h	2013-12-04 09:27:44.407194799 -0600
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,200 @@
 +/*
 + * Copyright (c) 2010-2020 Laird Connectivity
 + * All rights reserved.
@@ -341,11 +332,6 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#undef DEBUG
 +#include <asm/hardware.h>
 +
-+/* new uImage format support */
-+#define CONFIG_FIT		1
-+#define CONFIG_OF_LIBFDT	1
-+#define CONFIG_FIT_VERBOSE	1 /* enable fit_format_{error,warning}() */
-+
 +/*
 + * WARNING:
 + * The initial boot program needs to be adapted such that it loads U-boot
@@ -355,7 +341,7 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 + * lockup during boot due to an overlap in the BSS segment. So, we choose a
 + * safe load adress to begin with, namely 0x20a00000
 + */
-+#define CONFIG_SYS_TEXT_BASE		0x21F00000
++#define CONFIG_SYS_TEXT_BASE		0x21000000
 +
 +/* ARM asynchronous clock */
 +#define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock xtal */
@@ -381,8 +367,8 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +
 +/* serial console */
 +#define CONFIG_ATMEL_USART
-+#define CONFIG_USART_BASE		ATMEL_BASE_DBGU
-+#define	CONFIG_USART_ID			ATMEL_ID_SYS
++#define CONFIG_USART_BASE			ATMEL_BASE_DBGU
++#define CONFIG_USART_ID			ATMEL_ID_SYS
 +#define CONFIG_BAUDRATE			115200
 +#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
 +#undef CONFIG_USART0
@@ -409,7 +395,6 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 + * Command line configuration.
 + */
 +#include <config_cmd_default.h>
-+#undef CONFIG_CMD_BDI
 +#undef CONFIG_CMD_FPGA
 +#undef CONFIG_CMD_IMI
 +#undef CONFIG_CMD_IMLS
@@ -431,7 +416,7 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#define CONFIG_SYS_MEMTEST_END		0x21E00000
 +
 +/* size in bytes reserved for initial data */
-+#define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_SDRAM_BASE + 0x1000 \
++#define CONFIG_SYS_INIT_SP_ADDR	(ATMEL_BASE_SRAM1 + 0x4000 \
 +					- GENERATED_GBL_DATA_SIZE)
 +
 +/* NAND flash */
@@ -457,7 +442,6 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#define CONFIG_RMII			1
 +#define CONFIG_NET_MULTI		1
 +#define CONFIG_NET_RETRY_COUNT		20
-+#define CONFIG_RESET_PHY_R		1
 +#define CONFIG_ETHADDR			00:17:23:00:00:00
 +
 +#define CONFIG_ENV_OVERWRITE     1
@@ -478,12 +462,12 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#define CONFIG_ENV_IS_IN_NAND		1
 +#define CONFIG_ENV_OFFSET		0x80000
 +#define CONFIG_ENV_SIZE			0x20000		/* 1 sector = 128 kB */
-+#define CONFIG_BOOTCOMMAND		"nand read 0x21000000 0xA0000 0x200000; bootm"
++#define CONFIG_BOOTCOMMAND		"nand read 0x21000000 0xA0000 0x200000 && bootm 0x21000000"
 +#define CONFIG_BOOTARGS			"mem=32M console=ttyS0,115200 ubi.mtd=5 root=ubi0:rootfs " \
 +					"rootfstype=ubifs loglevel=4 rootflags=bulk_read,chk_data_crc rw"
 +
 +#define CONFIG_SYS_PROMPT		"U-Boot> "
-+#define CONFIG_SYS_CBSIZE		256
++#define CONFIG_SYS_CBSIZE		1024
 +#define CONFIG_SYS_MAXARGS		16
 +#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
 +#define CONFIG_SYS_LONGHELP
@@ -496,8 +480,6 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 + */
 +#define CONFIG_SYS_MALLOC_LEN		ROUND(3 * CONFIG_ENV_SIZE + 128*1024, 0x1000)
 +#define CONFIG_SYS_GBL_DATA_SIZE	128	/* 128 bytes for initial data */
-+
-+#define CONFIG_STACKSIZE		(32*1024)	/* regular stack */
 +
 +#ifdef CONFIG_USE_IRQ
 +#error CONFIG_USE_IRQ not supported
@@ -564,14 +546,14 @@ diff --git a/common/console.c b/common/console.c
  			/*
  			 * Upper layer may have already called tstc() so
  			 * check for that first.
---- a/drivers/watchdog/at91sam9_wdt.c
-+++ b/drivers/watchdog/at91sam9_wdt.c
-@@ -33,7 +33,7 @@
- #define ticks_to_ms(t)	(((t + 1) * 1000) >> 8)
+--- a/drivers/mtd/nand/atmel_nand.c
++++ b/drivers/mtd/nand/atmel_nand.c
+@@ -1010,7 +1010,7 @@
+ 	mtd->priv = nand;
+ 	nand->IO_ADDR_R = nand->IO_ADDR_W = (void  __iomem *)base_addr;
  
- /* Hardware timeout in seconds */
--#define WDT_HW_TIMEOUT 2
-+#define WDT_HW_TIMEOUT 5
- 
- /*
-  * Set the watchdog time interval in 1/256Hz (write-once)
+-	nand->ecc.mode = NAND_ECC_SOFT;
++	nand->ecc.mode = NAND_ECC_SOFT_BCH;
+ #ifdef CONFIG_SYS_NAND_DBW_16
+ 	nand->options = NAND_BUSWIDTH_16;
+ #endif
