@@ -462,7 +462,7 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#define CONFIG_ENV_IS_IN_NAND		1
 +#define CONFIG_ENV_OFFSET		0x80000
 +#define CONFIG_ENV_SIZE			0x20000		/* 1 sector = 128 kB */
-+#define CONFIG_BOOTCOMMAND		"nand read 0x21000000 0xA0000 0x200000 && bootm 0x21000000"
++#define CONFIG_BOOTCOMMAND		"nand read 0x21000000 0xA0000 0x200000; bootm"
 +#define CONFIG_BOOTARGS			"mem=32M console=ttyS0,115200 ubi.mtd=5 root=ubi0:rootfs " \
 +					"rootfstype=ubifs loglevel=4 rootflags=bulk_read,chk_data_crc rw"
 +
@@ -546,14 +546,3 @@ diff --git a/common/console.c b/common/console.c
  			/*
  			 * Upper layer may have already called tstc() so
  			 * check for that first.
---- a/drivers/mtd/nand/atmel_nand.c
-+++ b/drivers/mtd/nand/atmel_nand.c
-@@ -1010,7 +1010,7 @@
- 	mtd->priv = nand;
- 	nand->IO_ADDR_R = nand->IO_ADDR_W = (void  __iomem *)base_addr;
- 
--	nand->ecc.mode = NAND_ECC_SOFT;
-+	nand->ecc.mode = NAND_ECC_SOFT_BCH;
- #ifdef CONFIG_SYS_NAND_DBW_16
- 	nand->options = NAND_BUSWIDTH_16;
- #endif

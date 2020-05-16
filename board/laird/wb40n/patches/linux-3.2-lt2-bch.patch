@@ -1,0 +1,207 @@
+--- a/drivers/mtd/nand/atmel_nand.c
++++ b/drivers/mtd/nand/atmel_nand.c
+@@ -538,7 +538,7 @@
+ 				"regs\nFalling back on software ECC\n");
+ 	}
+ 
+-	nand_chip->ecc.mode = NAND_ECC_SOFT;	/* enable ECC */
++	nand_chip->ecc.mode = NAND_ECC_SOFT_BCH;	/* enable ECC */
+ 	if (no_ecc)
+ 		nand_chip->ecc.mode = NAND_ECC_NONE;
+ 	if (hard_ecc && regs) {
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -1103,29 +1103,52 @@
+ static int nand_read_page_swecc(struct mtd_info *mtd, struct nand_chip *chip,
+ 				uint8_t *buf, int page)
+ {
+-	int i, eccsize = chip->ecc.size;
+-	int eccbytes = chip->ecc.bytes;
+-	int eccsteps = chip->ecc.steps;
++	int i, eccsize;
++	int eccbytes;
++	int eccsteps;
++	int eccszdiff;
+ 	uint8_t *p = buf;
+ 	uint8_t *ecc_calc = chip->buffers->ecccalc;
+ 	uint8_t *ecc_code = chip->buffers->ecccode;
+-	uint32_t *eccpos = chip->ecc.layout->eccpos;
++	struct nand_ecc_ctrl *ecc = &chip->ecc;
++	uint32_t *eccpos = ecc->layout->eccpos;
+ 
+ 	chip->ecc.read_page_raw(mtd, chip, buf, page);
+ 
+-	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
+-		chip->ecc.calculate(mtd, p, &ecc_calc[i]);
++	if (chip->ecc.mode == NAND_ECC_SOFT_BCH) {
++		eccszdiff = chip->ecc.total - chip->ecc_ham.total;
++		for (i = 0; i < eccszdiff; i++) {
++			if (chip->oob_poi[eccpos[i]] != 0xff)
++				break;
++		}
++
++		if (i >= eccszdiff)
++			ecc = &chip->ecc_ham;
++	}
++
++retry:
++	eccsize = ecc->size;
++	eccbytes = ecc->bytes;
++	eccsteps = ecc->steps;
++	eccpos = ecc->layout->eccpos;
+ 
+-	for (i = 0; i < chip->ecc.total; i++)
++	for (i = 0; i < ecc->total; i++)
+ 		ecc_code[i] = chip->oob_poi[eccpos[i]];
+ 
+-	eccsteps = chip->ecc.steps;
++	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
++		ecc->calculate(mtd, p, &ecc_calc[i]);
++
++	eccsteps = ecc->steps;
+ 	p = buf;
+ 
+ 	for (i = 0 ; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
+ 		int stat;
+ 
+-		stat = chip->ecc.correct(mtd, p, &ecc_code[i], &ecc_calc[i]);
++		stat = ecc->correct(mtd, p, &ecc_code[i], &ecc_calc[i]);
++		if (stat < 0 && ecc == &chip->ecc) {
++			ecc = &chip->ecc_ham;
++			goto retry;
++		}
+ 		if (stat < 0)
+ 			mtd->ecc_stats.failed++;
+ 		else
+@@ -3248,19 +3271,27 @@
+ 	/*
+ 	 * If no default placement scheme is given, select an appropriate one.
+ 	 */
+-	if (!chip->ecc.layout && (chip->ecc.mode != NAND_ECC_SOFT_BCH)) {
++	if (!chip->ecc.layout) {
+ 		switch (mtd->oobsize) {
+ 		case 8:
+-			chip->ecc.layout = &nand_oob_8;
++			if (chip->ecc.mode != NAND_ECC_SOFT_BCH)
++				chip->ecc.layout = &nand_oob_8;
++			chip->ecc_ham.layout = &nand_oob_8;
+ 			break;
+ 		case 16:
+-			chip->ecc.layout = &nand_oob_16;
++			if (chip->ecc.mode != NAND_ECC_SOFT_BCH)
++				chip->ecc.layout = &nand_oob_16;
++			chip->ecc_ham.layout = &nand_oob_16;
+ 			break;
+ 		case 64:
+-			chip->ecc.layout = &nand_oob_64;
++			if (chip->ecc.mode != NAND_ECC_SOFT_BCH)
++				chip->ecc.layout = &nand_oob_64;
++			chip->ecc_ham.layout = &nand_oob_64;
+ 			break;
+ 		case 128:
+-			chip->ecc.layout = &nand_oob_128;
++			if (chip->ecc.mode != NAND_ECC_SOFT_BCH)
++				chip->ecc.layout = &nand_oob_128;
++			chip->ecc_ham.layout = &nand_oob_128;
+ 			break;
+ 		default:
+ 			pr_warn("No oob scheme defined for oobsize %d\n",
+@@ -3383,6 +3414,19 @@
+ 			pr_warn("BCH ECC initialization failed!\n");
+ 			BUG();
+ 		}
++
++		chip->ecc_ham.calculate = nand_calculate_ecc;
++		chip->ecc_ham.correct = nand_correct_data;
++		chip->ecc_ham.read_page = nand_read_page_swecc;
++		chip->ecc_ham.read_subpage = nand_read_subpage;
++		chip->ecc_ham.write_page = nand_write_page_swecc;
++		chip->ecc_ham.read_page_raw = nand_read_page_raw;
++		chip->ecc_ham.write_page_raw = nand_write_page_raw;
++		chip->ecc_ham.read_oob = nand_read_oob_std;
++		chip->ecc_ham.write_oob = nand_write_oob_std;
++		chip->ecc_ham.size = 256;
++		chip->ecc_ham.bytes = 3;
++		chip->ecc_ham.mode = NAND_ECC_SOFT;
+ 		break;
+ 
+ 	case NAND_ECC_NONE:
+@@ -3409,6 +3453,11 @@
+ 	if (!chip->ecc.write_oob_raw)
+ 		chip->ecc.write_oob_raw = chip->ecc.write_oob;
+ 
++	if (chip->ecc.mode == NAND_ECC_SOFT_BCH) {
++		chip->ecc_ham.read_oob_raw = chip->ecc.read_oob_raw;
++		chip->ecc_ham.write_oob_raw = chip->ecc.write_oob_raw;
++	}
++
+ 	/*
+ 	 * The number of bytes available for a client to place data into
+ 	 * the out of band area.
+@@ -3420,6 +3469,14 @@
+ 			chip->ecc.layout->oobfree[i].length;
+ 	mtd->oobavail = chip->ecc.layout->oobavail;
+ 
++	if (chip->ecc.mode == NAND_ECC_SOFT_BCH) {
++		chip->ecc_ham.layout->oobavail = 0;
++		for (i = 0; chip->ecc_ham.layout->oobfree[i].length
++				&& i < ARRAY_SIZE(chip->ecc_ham.layout->oobfree); i++)
++			chip->ecc_ham.layout->oobavail +=
++				chip->ecc_ham.layout->oobfree[i].length;
++	}
++
+ 	/*
+ 	 * Set the number of read / write steps for one page depending on ECC
+ 	 * mode.
+@@ -3430,6 +3487,11 @@
+ 		BUG();
+ 	}
+ 	chip->ecc.total = chip->ecc.steps * chip->ecc.bytes;
++
++	if (chip->ecc.mode == NAND_ECC_SOFT_BCH) {
++		chip->ecc_ham.steps = mtd->writesize / chip->ecc_ham.size;
++		chip->ecc_ham.total = chip->ecc_ham.steps * chip->ecc_ham.bytes;
++	}
+ 
+ 	/* Allow subpage writes up to ecc.steps. Not possible for MLC flash */
+ 	if (!(chip->options & NAND_NO_SUBPAGE_WRITE) &&
+--- a/drivers/mtd/nand/nand_ecc.c
++++ b/drivers/mtd/nand/nand_ecc.c
+@@ -424,8 +424,10 @@
+ int nand_calculate_ecc(struct mtd_info *mtd, const unsigned char *buf,
+ 		       unsigned char *code)
+ {
++	struct nand_chip *chip = mtd->priv;
+ 	__nand_calculate_ecc(buf,
+-			((struct nand_chip *)mtd->priv)->ecc.size, code);
++		chip->ecc.mode == NAND_ECC_SOFT_BCH ? chip->ecc_ham.size : 
++		chip->ecc.size, code);
+ 
+ 	return 0;
+ }
+@@ -524,11 +526,13 @@
+ int nand_correct_data(struct mtd_info *mtd, unsigned char *buf,
+ 		      unsigned char *read_ecc, unsigned char *calc_ecc)
+ {
++	struct nand_chip *chip = mtd->priv;
+ 	return __nand_correct_data(buf, read_ecc, calc_ecc,
+-				   ((struct nand_chip *)mtd->priv)->ecc.size);
++		chip->ecc.mode == NAND_ECC_SOFT_BCH ? chip->ecc_ham.size : 
++		chip->ecc.size);
+ }
+ EXPORT_SYMBOL(nand_correct_data);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Frans Meulenbroeks <fransmeulenbroeks@gmail.com>");
+ MODULE_DESCRIPTION("Generic NAND ECC support");
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -530,6 +530,7 @@
+ 	struct nand_hw_control *controller;
+ 	struct nand_ecclayout *ecclayout;
+ 
++	struct nand_ecc_ctrl ecc_ham;
+ 	struct nand_ecc_ctrl ecc;
+ 	struct nand_buffers *buffers;
+ 	struct nand_hw_control hwcontrol;
+ 
