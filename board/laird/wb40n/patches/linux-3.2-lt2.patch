@@ -846,7 +846,7 @@ diff -urN linux-3.2/arch/arm/configs/wb40n_defconfig linux-3.2-lt1/arch/arm/conf
 +# CONFIG_MTD_LPDDR is not set
 +CONFIG_MTD_UBI=y
 +CONFIG_MTD_UBI_WL_THRESHOLD=4096
-+CONFIG_MTD_UBI_BEB_RESERVE=1
++CONFIG_MTD_UBI_BEB_RESERVE=10
 +# CONFIG_MTD_UBI_GLUEBI is not set
 +# CONFIG_MTD_UBI_DEBUG is not set
 +CONFIG_DTC=y
