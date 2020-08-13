@@ -217,8 +217,6 @@ endif
 #        USB single antenna mfg firmware
 ifeq ($(BR2_PACKAGE_LAIRD_FIRMWARE_BCM4373_MFG),y)
 define LAIRD_FW_BCM4373_MFG_INSTALL_TARGET_CMDS
-	$(call make_bcm4373usb_fw,div,mfg,mfg)
-	$(call make_bcm4373usb_fw,sa,fcc,mfg)
 	cp -rad $(@D)/brcm/brcmfmac4373-sdio-mfg.bin $(BRCM_DIR)
 	cp -rad $(@D)/brcm/brcmfmac4373-sdio-div-mfg.txt $(BRCM_DIR)
 endef
