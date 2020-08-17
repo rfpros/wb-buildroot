@@ -170,6 +170,8 @@ create_bcm4373_sdio_uart_firmware_archive sa ic
 create_bcm4373_sdio_uart_firmware_archive div ic
 create_bcm4373_sdio_uart_firmware_archive sa jp
 create_bcm4373_sdio_uart_firmware_archive div jp
+create_bcm4373_sdio_uart_firmware_archive sa au
+create_bcm4373_sdio_uart_firmware_archive div au
 
 if grep -qF "BR2_PACKAGE_LAIRD_FIRMWARE_AR6003=y" ${BR2_CONFIG}; then
 ln -rsf ${FW_DIR}/regulatory_default.db ${FW_DIR}/regulatory.db
