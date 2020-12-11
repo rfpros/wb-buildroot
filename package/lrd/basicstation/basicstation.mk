@@ -3,7 +3,7 @@
 # Semtech Basic Station
 #
 ################################################################################
-BASICSTATION_VERSION = c29b8502f8c715daecec6666835da6e981dc820a
+BASICSTATION_VERSION = 42d4b9c7dd132ca4126b24726f57efb7c382e9a1
 BASICSTATION_SITE = https://github.com/lorabasics/basicstation.git
 BASICSTATION_SITE_METHOD = git
 BASICSTATION_DEPENDENCIES = mbedtls libloragw
