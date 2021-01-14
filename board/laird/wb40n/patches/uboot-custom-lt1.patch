@@ -90,8 +90,8 @@ diff -urNa uboot-custom/board/atmel/wb40n/Makefile uboot-custom/board/atmel/wb40
 +#########################################################################
 diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n/wb40n.c
 --- uboot-custom/board/atmel/wb40n/wb40n.c	1969-12-31 18:00:00.000000000 -0600
-+++ uboot-custom/board/atmel/wb40n/wb40n.c	2013-05-15 17:09:18.757226998 -0500
-@@ -0,0 +1,197 @@
++++ uboot-custom/board/atmel/wb40n/wb40n.c	2020-05-27 14:05:03.153375000 -0400
+@@ -0,0 +1,278 @@
 +/*
 + * Copyright (c) 2010-2012, Laird Connectivity
 + * Christopher Cole <chris.cole@lairdconnect.com>
@@ -121,7 +121,9 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +#include <asm/arch/at91_rstc.h>
 +#include <asm/arch/gpio.h>
 +
++#include <malloc.h>
 +#include <netdev.h>
++#include <nand.h>
 +
 +DECLARE_GLOBAL_DATA_PTR;
 +
@@ -289,6 +291,85 @@ diff -urNa uboot-custom/board/atmel/wb40n/wb40n.c uboot-custom/board/atmel/wb40n
 +#endif
 +	return rc;
 +}
++
++#ifdef CONFIG_BOARD_LATE_INIT
++#define ROOTFS_A_OFFSET		0x04a0000
++#define KERNEL_B_OFFSET		0x02a0000
++int board_late_init(void)
++{
++	u_char *datbuf = NULL;
++	uchar *oobbuf = NULL;
++	nand_info_t *nand = &nand_info[nand_curr_device];
++	struct mtd_oob_ops ops;
++	uint32_t *eccpos;
++	int i;
++	loff_t offset;
++	size_t rwsize;
++	int ret = -1;
++
++	// Re-write bootstrap, uboot, bootenv and kernel partitions
++	// if they have been written with a Hamming compatible ECC
++	// The re-write will be in BCH format, protecting them against
++	// up to 4 bit errors.
++
++	// 1. Check bootstrap sector.  If it is already in BCH format,
++	// assume that remaining areas are already in BCH.  No need to
++	// proceed further.
++	oobbuf = memalign(ARCH_DMA_MINALIGN, nand->oobsize);
++	if (!oobbuf)
++		goto ErrorReturn;
++
++	memset(&ops, 0, sizeof(ops));
++
++	ops.oobbuf = oobbuf;
++	ops.ooblen = nand->oobsize;
++	ops.mode = MTD_OOB_RAW;
++	i = nand->read_oob(nand, 0, &ops);
++	if (i < 0) {
++		printf("Error (%d) reading bootstrap!\n", i);
++		goto ErrorReturn;
++	}
++	if (nand->ecclayout->eccbytes != 28) {
++		printf("Unexpected ECC bytes! %d\n", nand->ecclayout->eccbytes);
++		goto ErrorReturn;
++	}
++	eccpos = nand->ecclayout->eccpos;
++	for (i=0; i< 4; i++) {
++		if (oobbuf[eccpos[i]] != 0xFF) {
++			// Non-erased byte in BCH ECC area, BCH ECC is used
++			// Assume all regions are BCH if bootstrap is
++			ret = 0;
++			goto ErrorReturn;
++		}
++	}
++
++	printf("Converting to BCH...\n");
++	// 2. Bootstrap did not contain BCH ECC.  Re-write needed blocks
++	datbuf = (uchar *)memalign(ARCH_DMA_MINALIGN, nand->erasesize);
++	if (!datbuf)
++		goto ErrorReturn;
++
++	for (offset = 0; offset < ROOTFS_A_OFFSET; offset += nand->erasesize) {
++		if (nand_block_isbad(nand, offset))
++			continue;
++		rwsize = nand->erasesize;
++		ret = nand_read(nand, offset, &rwsize, datbuf);
++		if (ret && (ret != -EUCLEAN)) {
++			printf("Read failure at 0x%llx! (%d)\n", offset, ret);
++			goto ErrorReturn;
++		}
++		nand_erase(nand, offset, nand->erasesize);
++		nand_write(nand, offset, &rwsize, datbuf);
++	}
++	ret = 0;
++
++ErrorReturn:
++	free(oobbuf);
++	free(datbuf);
++	return ret;
++}
++#endif
++
 diff -urNa uboot-custom/boards.cfg uboot-custom/boards.cfg
 --- uboot-custom/boards.cfg	2012-12-14 15:43:22.000000000 -0600
 +++ uboot-custom/boards.cfg	2013-05-15 17:09:18.757226998 -0500
@@ -359,6 +440,7 @@ diff -urNa uboot-custom/include/configs/wb40n.h uboot-custom/include/configs/wb4
 +#define CONFIG_DISPLAY_CPUINFO
 +#define CONFIG_AT91RESET_EXTRST		/* assert external reset */
 +//#define CONFIG_SKIP_RELOCATE_UBOOT
++#define CONFIG_BOARD_LATE_INIT
 +
 +/* general purpose I/O */
 +#define CONFIG_ATMEL_LEGACY		/* required until (g)pio is fixed */
