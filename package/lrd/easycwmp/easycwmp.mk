@@ -42,6 +42,7 @@ define EASYCWMP_INSTALL_TARGET_CMDS
 	$(INSTALL) -m 0755 $(@D)/ext/openwrt/scripts/functions/tr098/ipping_diagnostic $(TARGET_DIR)/usr/share/easycwmp/functions
 	$(INSTALL) -m 0755 $(@D)/ext/openwrt/scripts/functions/tr181/ip $(TARGET_DIR)/usr/share/easycwmp/functions
 	$(INSTALL) -m 0755 $(@D)/ext/openwrt/scripts/functions/tr181/wifi $(TARGET_DIR)/usr/share/easycwmp/functions
+	$(INSTALL) -m 0755 $(@D)/ext/openwrt/scripts/functions/tr181/cellular $(TARGET_DIR)/usr/share/easycwmp/functions
 	$(INSTALL) -m 0755 $(@D)/ext/openwrt/scripts/functions/laird/laird_device $(TARGET_DIR)/usr/share/easycwmp/functions
 	$(INSTALL) -m 0755 $(@D)/ext/openwrt/config/easycwmp $(TARGET_DIR)/etc/config/easycwmp
 	$(INSTALL) -m 0755 $(@D)/ext/openwrt/config/laird $(TARGET_DIR)/etc/config/laird
