@@ -96,7 +96,7 @@ export BR2_VERSION := 2020.02
 # Actual time the release is cut (for reproducible builds)
 BR2_VERSION_EPOCH = 1583701800
 # Laird branch number
-export BR2_LRD_BRANCH := 0
+export BR2_LRD_BRANCH := 9
 
 # Save running make version since it's clobbered by the make package
 RUNNING_MAKE_VERSION := $(MAKE_VERSION)
