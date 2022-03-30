@@ -8,18 +8,21 @@ SDCCLI_VERSION = local
 SDCCLI_SITE = package/lrd-closed-source/externals/sdc_cli
 SDCCLI_SITE_METHOD = local
 
-SDCCLI_DEPENDENCIES = libnl libedit
-
 ifeq ($(BR2_PACKAGE_SDCSDK_NM),y)
-SDCCLI_DEPENDENCIES += sdcsdk_nm
-SDCCLI_OPTS = _LRD_NMWRAPPER=y
+	SDCCLI_DEPENDENCIES = libnl sdcsdk_nm libedit
+	TARGET_CFLAGS += -D_LRD_NMWRAPPER
 else
-SDCCLI_DEPENDENCIES += sdcsdk
+	SDCCLI_DEPENDENCIES = libnl sdcsdk libedit
 endif
+
+SDCCLI_MAKE_ENV += CC="$(TARGET_CC)" \
+                  CXX="$(TARGET_CXX)" \
+                  ARCH="$(KERNEL_ARCH)" \
+                  CFLAGS="$(TARGET_CFLAGS)"
 
 ifeq ($(BR2_PACKAGE_SDCCLI_SDC_CLI),y)
 define BUILD_SDC_CLI_CMD
-	$(TARGET_MAKE_ENV) $(MAKE) $(TARGET_CONFIGURE_OPTS) $(SDCCLI_OPTS) -C $(@D) sdc_cli
+	$(SDCCLI_MAKE_ENV) $(MAKE) -C $(@D) sdc_cli
 endef
 
 define INSTALL_SDC_CLI_CMD
@@ -33,7 +36,7 @@ endif
 
 ifeq ($(BR2_PACKAGE_SDCCLI_SMU_CLI),y)
 define BUILD_SMU_CLI_CMD
-	$(TARGET_MAKE_ENV) $(MAKE) $(TARGET_CONFIGURE_OPTS) $(SDCCLI_OPTS) -C $(@D) smu_cli
+	$(SDCCLI_MAKE_ENV) $(MAKE) -C $(@D) smu_cli
 endef
 
 define INSTALL_SDC_SMU_CMD
