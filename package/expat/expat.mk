@@ -13,8 +13,9 @@ HOST_EXPAT_DEPENDENCIES = host-pkgconf
 EXPAT_LICENSE = MIT
 EXPAT_LICENSE_FILES = COPYING
 
-EXPAT_CONF_OPTS = --without-docbook
-HOST_EXPAT_CONF_OPTS = --without-docbook
+EXPAT_CONF_OPTS = \
+	--without-docbook --without-examples --without-tests --without-xmlwf
+HOST_EXPAT_CONF_OPTS = --without-docbook --without-examples --without-tests
 
 $(eval $(autotools-package))
 $(eval $(host-autotools-package))
