@@ -23,7 +23,7 @@ diff -Nura php-5.6.8.orig/acinclude.m4 php-5.6.8/acinclude.m4
 diff -Nura php-5.6.7.orig/ext/iconv/config.m4 php-5.6.7/ext/iconv/config.m4
 --- php-5.6.7.orig/ext/iconv/config.m4	2015-04-08 11:08:11.184847544 -0300
 +++ php-5.6.7/ext/iconv/config.m4	2015-04-08 11:39:07.823608030 -0300
-@@ -14,28 +14,8 @@
+@@ -14,28 +14,7 @@
    ])
  
    if test "$iconv_avail" != "no"; then
@@ -40,7 +40,7 @@ diff -Nura php-5.6.7.orig/ext/iconv/config.m4 php-5.6.7/ext/iconv/config.m4
 -    else
 -      PHP_ICONV_PREFIX="$ICONV_DIR"
 -    fi
- 
+-
 -    CFLAGS="-I$PHP_ICONV_PREFIX/include $CFLAGS"
 -    LDFLAGS="-L$PHP_ICONV_PREFIX/$PHP_LIBDIR $LDFLAGS"
 -
@@ -48,8 +48,5 @@ diff -Nura php-5.6.7.orig/ext/iconv/config.m4 php-5.6.7/ext/iconv/config.m4
 -      PHP_ICONV_H_PATH="$PHP_ICONV_PREFIX/include/giconv.h"
 -    else
 -      PHP_ICONV_H_PATH="$PHP_ICONV_PREFIX/include/iconv.h"
--    fi 
+-	fi
 +    PHP_ICONV_H_PATH="iconv.h"
- 
-     AC_MSG_CHECKING([if iconv is glibc's])
-     AC_TRY_LINK([#include <gnu/libc-version.h>],[gnu_get_libc_version();],
