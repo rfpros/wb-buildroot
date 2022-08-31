@@ -100,8 +100,8 @@ udhcpc_conf() {
 udhcpc_start() {
   # set no-verbose or use a verbose mode level
   # udhcpc debug is offset from verbose level by 2
-  [ ${#vm} -eq 0 ] && nv='>/dev/null'
-  [ ${#vm} -eq 1 ] && nv='|grep -E "obtained|udhcpc"'
+  [ ${#vm} -eq 0 ] && nv='2>/dev/null'
+  [ ${#vm} -eq 1 ] && nv='2>&1|grep -E "obtained|udhcpc"'
   [ ${#vm} -ge 2 ] && v=${vm//./-v } v=${v/-v }-S vb=${v:+-v}
 
   # request ip-address (env)
