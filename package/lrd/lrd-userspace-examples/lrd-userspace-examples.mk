@@ -23,8 +23,4 @@ ifeq ($(BR2_PACKAGE_LRD_USERSPACE_NETLINK_EXAMPLES),y)
 	LRD_USERSPACE_EXAMPLES_CONF_OPTS += --enable-nl-examples
 endif
 
-ifeq ($(BR2_PACKAGE_LRD_USERSPACE_CMUX),y)
-	LRD_USERSPACE_EXAMPLES_CONF_OPTS += --enable-cmux
-endif
-
 $(eval $(autotools-package))
