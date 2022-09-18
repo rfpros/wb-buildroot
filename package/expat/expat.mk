@@ -11,6 +11,9 @@ EXPAT_INSTALL_STAGING = YES
 EXPAT_LICENSE = MIT
 EXPAT_LICENSE_FILES = COPYING
 
+# 0001-Ensure-raw-tagnames-are-safe-exiting-internalEntityParser.patch
+EXPAT_IGNORE_CVES += CVE-2022-40674
+
 EXPAT_CONF_OPTS = \
 	--without-docbook --without-examples --without-tests --without-xmlwf
 HOST_EXPAT_CONF_OPTS = --without-docbook --without-examples --without-tests
