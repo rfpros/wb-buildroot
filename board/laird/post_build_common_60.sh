@@ -84,10 +84,12 @@ fi
 
 # Remove not needed systemd generators
 rm -f ${TARGET_DIR}/usr/lib/systemd/system-generators/systemd-gpt-auto-generator
+rm -f ${TARGET_DIR}/usr/lib/systemd/systemd-network-generator
+rm -f ${TARGET_DIR}/usr/lib/systemd/system/systemd-network-generator.service
 rm -f ${TARGET_DIR}/usr/lib/systemd/system/sys-fs-fuse-connections.mount
 
 if [ -f ${TARGET_DIR}/usr/lib/systemd/system/systemd-logind.service ] && \
-   [ ! grep -qF "BR2_PACKAGE_LIBDRM=y" ${BR2_CONFIG} ]; then
+   ! grep -qF "BR2_PACKAGE_LIBDRM=y" ${BR2_CONFIG}; then
 	sed -i 's/modprobe@drm.service//g' ${TARGET_DIR}/usr/lib/systemd/system/systemd-logind.service
 fi
 
@@ -126,6 +128,7 @@ rm -f "${TARGET_DIR}/usr/lib/python3.7/site-packages/setuptools/"*.exe
 	find "${TARGET_DIR}/usr/lib/node_modules" -name '*.md' -exec rm -f {} \;
 rm -rf "${TARGET_DIR}/var/www/swupdate"
 rm -rf "${TARGET_DIR}/usr/share/gobject-introspection-1.0/"
+rm -rf "${TARGET_DIR}/usr/lib/gobject-introspection/"
 
 if [ "${BUILD_TYPE}" != ig60 ]; then
 
@@ -153,6 +156,9 @@ else
 	# Use standard boot script
 	ln -rsf ${CCONF_DIR}/boot.scr ${BINARIES_DIR}/boot.scr
 fi
+
+# No need to start swupdate service automatically, it will start by socket
+echo "disable swupdate.service" > ${TARGET_DIR}/usr/lib/systemd/system-preset/50-swupdate.preset
 
 # Copy public key if swupdate signature check is enabled
 if grep -q 'CONFIG_SIGNED_IMAGES=y' ${BUILD_DIR}/swupdate*/include/config/auto.conf; then
