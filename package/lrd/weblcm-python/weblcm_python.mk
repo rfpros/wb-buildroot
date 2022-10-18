@@ -6,7 +6,7 @@ WEBLCM_PYTHON_VERSION = local
 WEBLCM_PYTHON_SITE = package/lrd/externals/weblcm-python
 WEBLCM_PYTHON_SITE_METHOD = local
 WEBLCM_PYTHON_SETUP_TYPE = setuptools
-WEBLCM_PYTHON_DEPENDENCIES = lrd-swupdate-client
+WEBLCM_PYTHON_DEPENDENCIES = lrd-swupdate-client openssl
 
 TARGET_PYTHON_VERSION := $$(find $(TARGET_DIR)/usr/lib -maxdepth 1 -type d -name python* -printf "%f\n" | egrep -o '[0-9].[0-9]')
 WEBLCM_PYTHON_SET_KEY_LOCATION_VALUE = $(call qstrip,$(BR2_PACKAGE_WEBLCM_PYTHON_SWUPDATE_KEY_LOCATION))
