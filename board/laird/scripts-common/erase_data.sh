@@ -52,6 +52,8 @@ migrate_data() {
 		fi
 
 		cp -fa "${DATA_SRC}"/* "${DATA_TARGET}"/ || exit_on_error 1 "Data Copying.. Failed"
+
+		rm -f ${DATA_SECRET_TARGET}/NetworkManager/system-connections/shared-usb0.nmcnnection
 	fi
 
 	#Unmount the data device
