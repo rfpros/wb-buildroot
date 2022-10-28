@@ -64,7 +64,7 @@ define WEBLCM_PYTHON_POST_INSTALL_TARGET_HOOK_CMDS
 	cp -fr $(WEBLCM_PYTHON_SITE)/plugins $(TARGET_DIR)/var/www/
 
 	$(INSTALL) -D -t $(TARGET_DIR)/usr/bin/weblcm-python.scripts -m 755 $(WEBLCM_PYTHON_SITE)/*.sh
-	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python -m 644 $(WEBLCM_PYTHON_SITE)/*.ini
+	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python -m 644 $(WEBLCM_PYTHON_SITE)/weblcm-python.ini
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/server.key
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/server.crt
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/ca.crt
@@ -73,27 +73,27 @@ define WEBLCM_PYTHON_POST_INSTALL_TARGET_HOOK_CMDS
 	 ! grep -q 'CONFIG_SIGNED_IMAGES=y' ${BUILD_DIR}/swupdate*/include/config/auto.conf \
 		|| echo 'SWCERT=-k $(WEBLCM_PYTHON_SET_KEY_LOCATION_VALUE) --cert-purpose codeSigning' > $(TARGET_DIR)/etc/weblcm-python/swcert.conf
 
-	sed -i -e '/^default_/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a default_password: \"$(WEBLCM_PYTHON_DEFAULT_PASSWORD)\"' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a default_username: \"$(WEBLCM_PYTHON_DEFAULT_USERNAME)\"' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^default_/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a default_password: \"$(WEBLCM_PYTHON_DEFAULT_PASSWORD)\"' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a default_username: \"$(WEBLCM_PYTHON_DEFAULT_USERNAME)\"' $(TARGET_DIR)/etc/weblcm-python.ini
 
-	sed -i -e '/^managed_software_devices/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a managed_software_devices: $(BR2_PACKAGE_WEBLCM_PYTHON_MANAGED_SOFTWARE_DEVICES)' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^managed_software_devices/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a managed_software_devices: $(BR2_PACKAGE_WEBLCM_PYTHON_MANAGED_SOFTWARE_DEVICES)' $(TARGET_DIR)/etc/weblcm-python.ini
 
-	sed -i -e '/^unmanaged_hardware_devices/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a unmanaged_hardware_devices: $(BR2_PACKAGE_WEBLCM_PYTHON_UNMANAGED_HARDWARE_DEVICES)' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^unmanaged_hardware_devices/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a unmanaged_hardware_devices: $(BR2_PACKAGE_WEBLCM_PYTHON_UNMANAGED_HARDWARE_DEVICES)' $(TARGET_DIR)/etc/weblcm-python.ini
 
-	sed -i -e '/^awm_cfg/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a awm_cfg:$(BR2_PACKAGE_ADAPTIVE_WW_BINARIES_CFG_FILE)' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^awm_cfg/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a awm_cfg:$(BR2_PACKAGE_ADAPTIVE_WW_BINARIES_CFG_FILE)' $(TARGET_DIR)/etc/weblcm-python.ini
 
-	sed -i -e '/^enable_allow_unauthenticated_reboot_reset/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a enable_allow_unauthenticated_reboot_reset:$(WEBLCM_PYTHON_ENABLE_UNAUTHENTICATED)' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^enable_allow_unauthenticated_reboot_reset/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a enable_allow_unauthenticated_reboot_reset:$(WEBLCM_PYTHON_ENABLE_UNAUTHENTICATED)' $(TARGET_DIR)/etc/weblcm-python.ini
 
-	sed -i -e '/^server.socket_host/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[global\]/a server.socket_host: $(BR2_PACKAGE_WEBLCM_PYTHON_BIND_IP)' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^server.socket_host/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[global\]/a server.socket_host: $(BR2_PACKAGE_WEBLCM_PYTHON_BIND_IP)' $(TARGET_DIR)/etc/weblcm-python.ini
 
-	sed -i -e '/^allow_multiple_user_sessions/d' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
-	sed -i -e '/\[weblcm\]/a allow_multiple_user_sessions:$(WEBLCM_PYTHON_ENABLE_MULTIPLE_USER_SESSIONS)' $(TARGET_DIR)/etc/weblcm-python/weblcm-python.ini
+	sed -i -e '/^allow_multiple_user_sessions/d' $(TARGET_DIR)/etc/weblcm-python.ini
+	sed -i -e '/\[weblcm\]/a allow_multiple_user_sessions:$(WEBLCM_PYTHON_ENABLE_MULTIPLE_USER_SESSIONS)' $(TARGET_DIR)/etc/weblcm-python.ini
 endef
 
 WEBLCM_PYTHON_POST_INSTALL_TARGET_HOOKS += WEBLCM_PYTHON_POST_INSTALL_TARGET_HOOK_CMDS
