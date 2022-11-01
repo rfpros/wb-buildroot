@@ -2,7 +2,7 @@
 
 trap 'rm -rf ${TMPDIR}' EXIT
 
-IMGFILE=$1
+IMGFILE=${1}
 ROOTFS_EXTRA_SIZE=${2:-0}
 ROOTFSDIR=$3
 SRCDIR=${0%/*}
@@ -75,10 +75,13 @@ echo "[Creating boot partition...]"
 # Create boot partition image
 mkfs.vfat -F 16 -n BOOT -S ${BOOT_LBS} -C ${TMPDIR}/boot.img ${BOOT_BLOCKS} > /dev/null
 
+HOST_MCOPY=${SRCDIR}/../host/bin/mcopy
+[ -f ${HOST_MCOPY} ] || HOST_MCOPY=mcopy
+
 # Add files to boot partition image
-mcopy -i ${TMPDIR}/boot.img ${SRCDIR}/u-boot-spl.bin ::/boot.bin
-mcopy -i ${TMPDIR}/boot.img ${SRCDIR}/u-boot.itb ::/
-mcopy -i ${TMPDIR}/boot.img ${SRCDIR}/kernel.itb ::/
+${HOST_MCOPY} -i ${TMPDIR}/boot.img ${SRCDIR}/u-boot-spl.bin ::/boot.bin
+${HOST_MCOPY} -i ${TMPDIR}/boot.img ${SRCDIR}/u-boot.itb ::/
+${HOST_MCOPY} -i ${TMPDIR}/boot.img ${SRCDIR}/kernel.itb ::/
 
 # Add boot partition to disk image
 cat ${TMPDIR}/boot.img >> ${IMGTMPFILE}
