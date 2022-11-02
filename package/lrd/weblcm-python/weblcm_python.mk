@@ -64,7 +64,7 @@ define WEBLCM_PYTHON_POST_INSTALL_TARGET_HOOK_CMDS
 	cp -fr $(WEBLCM_PYTHON_SITE)/plugins $(TARGET_DIR)/var/www/
 
 	$(INSTALL) -D -t $(TARGET_DIR)/usr/bin/weblcm-python.scripts -m 755 $(WEBLCM_PYTHON_SITE)/*.sh
-	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python -m 644 $(WEBLCM_PYTHON_SITE)/weblcm-python.ini
+	$(INSTALL) -D -t $(TARGET_DIR)/etc -m 644 $(WEBLCM_PYTHON_SITE)/weblcm-python.ini
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/server.key
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/server.crt
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/ca.crt
