@@ -8,14 +8,8 @@ IGUPD_SITE_METHOD = local
 IGUPD_SETUP_TYPE = setuptools
 IGUPD_BUILD_OPTS = bdist_egg --exclude-source-files
 
-ifeq ($(BR2_PACKAGE_PYTHON3),y)
-IGUPD_PYTHON_VERSION := 3.7
-else
-IGUPD_PYTHON_VERSION := 2.7
-endif
-
 define IGUPD_INSTALL_TARGET_CMDS
-	$(INSTALL) -D -m 755 $(@D)/dist/igupd-1.0-py$(IGUPD_PYTHON_VERSION).egg $(TARGET_DIR)/usr/bin/igupd
+	$(INSTALL) -D -m 755 $(@D)/dist/igupd-1.0-py$(PYTHON3_VERSION_MAJOR).egg $(TARGET_DIR)/usr/bin/igupd
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/dbus-1/system.d -m 644 package/lrd/igupd/com.lairdtech.security.UpdateService.conf
 	$(INSTALL) -D -t $(TARGET_DIR)/etc -m 644 package/lrd/igupd/secupdate.cfg
 endef
