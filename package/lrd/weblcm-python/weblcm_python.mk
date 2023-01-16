@@ -51,15 +51,6 @@ endif
 define WEBLCM_PYTHON_POST_INSTALL_TARGET_HOOK_CMDS
 	$(INSTALL) -d $(TARGET_DIR)/etc/weblcm-python
 
-	$(INSTALL) -D -t $(TARGET_DIR)/var/www/assets/fonts -m 644 $(WEBLCM_PYTHON_SITE)/assets/fonts/*
-	$(INSTALL) -D -t $(TARGET_DIR)/var/www/assets/css -m 644 $(WEBLCM_PYTHON_SITE)/assets/css/*.css
-	$(INSTALL) -D -t $(TARGET_DIR)/var/www/assets/img -m 644 $(WEBLCM_PYTHON_SITE)/assets/img/*.png
-	$(INSTALL) -D -t $(TARGET_DIR)/var/www/assets/js -m 644 $(WEBLCM_PYTHON_SITE)/assets/js/*.js
-	$(INSTALL) -D -t $(TARGET_DIR)/var/www/assets/i18n -m 644 $(WEBLCM_PYTHON_SITE)/assets/i18n/*.json
-	$(INSTALL) -D -t $(TARGET_DIR)/var/www -m 644 $(WEBLCM_PYTHON_SITE)/LICENSE
-
-	cp -fr $(WEBLCM_PYTHON_SITE)/plugins $(TARGET_DIR)/var/www/
-
 	$(INSTALL) -D -t $(TARGET_DIR)/usr/bin/weblcm-python.scripts -m 755 $(WEBLCM_PYTHON_SITE)/*.sh
 	$(INSTALL) -D -t $(TARGET_DIR)/etc -m 644 $(WEBLCM_PYTHON_SITE)/weblcm-python.ini
 	$(INSTALL) -D -t $(TARGET_DIR)/etc/weblcm-python/ssl -m 644 $(WEBLCM_PYTHON_SITE)/ssl/server.key
