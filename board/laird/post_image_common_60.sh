@@ -76,7 +76,7 @@ if ! grep -q 'CONFIG_SIGNED_IMAGES=y' ${BUILD_DIR}/swupdate*/include/config/auto
 		sed -i -e "/sha256/d" ${BINARIES_DIR}/sw-description
 fi
 
-ALL_SWU_FILES="sw-description boot.bin u-boot.itb kernel.itb rootfs.bin u-boot-env.tgz erase_data.sh"
+ALL_SWU_FILES="sw-description boot.bin u-boot.itb kernel.itb rootfs.bin erase_data.sh"
 
 if ! ${ENCRYPTED_TOOLKIT} ; then
 	# Generate non-secured artifacts
@@ -125,7 +125,7 @@ if ! ${SD} ; then
 			pmecc.bin u-boot-spl.dtb u-boot-spl-nodtb.bin u-boot.dtb \
 			u-boot-nodtb.bin u-boot.its u-boot.scr.itb \
 			Image.gz "${DTB}" boot.scr kernel.its \
-			sw-description rootfs.verity u-boot-env.tgz erase_data.sh
+			sw-description rootfs.verity erase_data.sh
 
 		tar -C ${HOST_DIR}/usr/bin -rhf ${RELEASE_FILE} \
 			--owner=0 --group=0 --numeric-owner \
